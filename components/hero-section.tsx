@@ -1,5 +1,6 @@
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Zap } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Zap } from "lucide-react";
+import LinkButton from "./link-button";
 
 export function HeroSection() {
   return (
@@ -19,15 +20,20 @@ export function HeroSection() {
           </h1>
 
           <p className="text-xl text-muted-foreground text-balance mb-8 max-w-2xl mx-auto leading-relaxed">
-            Upload your lecture PDFs and let our AI generate comprehensive multiple-choice questions instantly. Perfect
-            for students studying and educators creating assessments.
+            Upload your lecture PDFs and let our AI generate comprehensive
+            multiple-choice questions instantly. Perfect for students studying
+            and educators creating assessments.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
+            <LinkButton
+              href="/dashboard"
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+            >
               Start Creating Questions
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            </LinkButton>
             <Button variant="outline" size="lg" className="px-8 bg-transparent">
               Watch Demo
             </Button>
@@ -50,5 +56,5 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, ArrowRight, CheckCircle } from "lucide-react";
+import LinkButton from "./link-button";
 
 export function DemoSection() {
   return (
@@ -58,10 +59,13 @@ export function DemoSection() {
                 </div>
               </div>
 
-              <Button className="bg-primary hover:bg-primary/90">
+              <LinkButton
+                href="/dashboard"
+                className="bg-primary hover:bg-primary/90"
+              >
                 Try It Now
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              </LinkButton>
             </div>
 
             <Card className="bg-card border-border">

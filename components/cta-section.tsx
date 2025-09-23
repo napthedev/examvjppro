@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import LinkButton from "./link-button";
 
 export function CTASection() {
   return (
@@ -24,13 +25,14 @@ export function CTASection() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
+              <LinkButton
+                href="/dashboard"
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
               >
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              </LinkButton>
               <Button
                 variant="outline"
                 size="lg"
