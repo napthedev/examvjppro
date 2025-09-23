@@ -55,4 +55,11 @@ function Button({
   );
 }
 
+// Define and export the ButtonProps type for reuse
+type ButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  };
+
 export { Button, buttonVariants };
+export type { ButtonProps };

@@ -36,7 +36,7 @@ export function CTASection() {
                 size="lg"
                 className="px-8 bg-transparent"
               >
-                Schedule Demo
+                Watch Demo
               </Button>
             </div>
 

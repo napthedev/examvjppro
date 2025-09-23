@@ -3,6 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { FileText, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Authenticated, Unauthenticated } from "convex/react";
+import { SignInButton, UserButton } from "@clerk/nextjs";
+import Link from "next/link";
+import LinkButton from "./link-button";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,7 +18,7 @@ export function Header() {
           <div className="flex items-center space-x-2">
             <FileText className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-foreground">
-              ExamVJPPro
+              ExamVjpPro
             </span>
           </div>
 
@@ -39,13 +43,25 @@ export function Header() {
             </a>
           </nav>
 
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" className="hidden md:inline-flex">
-              Sign In
-            </Button>
-            <Button className="bg-primary hover:bg-primary/90">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <>
+              <Authenticated>
+                <UserButton />
+              </Authenticated>
+              <Unauthenticated>
+                <SignInButton>
+                  <Button variant="ghost" className="">
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </Unauthenticated>
+            </>
+            <LinkButton
+              href="/dashboard"
+              className="bg-primary hover:bg-primary/90 hidden md:inline-flex"
+            >
               Get Started
-            </Button>
+            </LinkButton>
             <Button
               variant="ghost"
               size="icon"
@@ -85,11 +101,6 @@ export function Header() {
               >
                 Testimonials
               </a>
-              <div className="px-3 py-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  Sign In
-                </Button>
-              </div>
             </div>
           </div>
         )}

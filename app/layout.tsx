@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import ConvexClientProvider from "../components/convex-client-provider";
+import { dark } from "@clerk/themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={{ baseTheme: dark }}>
       <ConvexClientProvider>
         {/* Wrap the layout inside ConvexClientProvider */}
         <html lang="en" className="dark">
