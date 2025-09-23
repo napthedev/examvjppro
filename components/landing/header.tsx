@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import LinkButton from "./link-button";
+import LinkButton from "../link-button";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

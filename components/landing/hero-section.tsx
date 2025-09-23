@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
-import LinkButton from "./link-button";
+import LinkButton from "../link-button";
 
 export function HeroSection() {
   return (
