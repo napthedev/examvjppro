@@ -49,7 +49,7 @@ export function Header() {
                 <UserButton />
               </Authenticated>
               <Unauthenticated>
-                <SignInButton>
+                <SignInButton mode="modal">
                   <Button variant="ghost" className="">
                     Sign In
                   </Button>
