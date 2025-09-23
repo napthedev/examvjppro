@@ -1,6 +1,7 @@
 "use client";
 
-import { useUser, SignInButton } from "@clerk/nextjs";
+import TriggerSignIn from "@/components/trigger-sign-in";
+import { useUser } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
@@ -17,11 +18,7 @@ export default function Dashboard() {
 
   // If user is not logged in, trigger login immediately
   if (!isSignedIn) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <SignInButton mode="modal" />
-      </div>
-    );
+    return <TriggerSignIn />;
   }
 
   // If user is logged in, show welcome message
