@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
-import { ClerkProvider } from "@clerk/nextjs"; // Import ClerkProvider
+import { ClerkProvider } from "@clerk/nextjs";
 import ConvexClientProvider from "../components/convex-client-provider";
 import "./globals.css";
 
@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: "ExamVjpPro - AI-Powered Question Generator",
   description:
     "Transform your PDF lecture files into multiple-choice questions with AI. Perfect for students and educators.",
-  generator: "v0.app",
 };
 
 export default function RootLayout({
