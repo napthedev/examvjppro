@@ -19,9 +19,8 @@ interface UserExamsProps {
 }
 
 export function UserExams({ userId }: UserExamsProps) {
-  const exams = useQuery(api.exams.getExamsByUserWithLimit, {
+  const exams = useQuery(api.exams.getExamsByUser, {
     userId: userId,
-    limit: 10,
   });
 
   if (exams === undefined) {
@@ -115,14 +114,6 @@ export function UserExams({ userId }: UserExamsProps) {
           );
         })}
       </div>
-
-      {exams.length >= 10 && (
-        <div className="text-center pt-4">
-          <p className="text-sm text-muted-foreground">
-            Showing your 10 most recent exams
-          </p>
-        </div>
-      )}
     </div>
   );
 }
