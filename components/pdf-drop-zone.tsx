@@ -2,24 +2,52 @@
 
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, X, AlertCircle } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  X,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+interface Question {
+  id: number;
+  question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correctAnswer: string;
+  explanation: string;
+}
+
 interface PdfDropZoneProps {
   onFileSelect: (file: File) => void;
+  onQuestionsGenerated: (
+    questions: Question[],
+    fileName: string,
+    fileSize: number
+  ) => void;
   className?: string;
   maxSizeMB?: number;
 }
 
 export function PdfDropZone({
   onFileSelect,
+  onQuestionsGenerated,
   className,
   maxSizeMB = 10,
 }: PdfDropZoneProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState("");
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -60,6 +88,51 @@ export function PdfDropZone({
   const removeFile = () => {
     setSelectedFile(null);
     setError("");
+    setIsGenerating(false);
+    setGenerationProgress("");
+  };
+
+  const generateQuestions = async () => {
+    if (!selectedFile) return;
+
+    setIsGenerating(true);
+    setError("");
+    setGenerationProgress("Uploading PDF...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      setGenerationProgress("Analyzing document...");
+
+      const response = await fetch("/api/generate-questions", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate questions");
+      }
+
+      setGenerationProgress("Generating questions...");
+
+      const data = await response.json();
+
+      if (data.success && data.questions) {
+        onQuestionsGenerated(data.questions, data.fileName, data.fileSize);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (err) {
+      console.error("Error generating questions:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate questions"
+      );
+    } finally {
+      setIsGenerating(false);
+      setGenerationProgress("");
+    }
   };
 
   const handleClick = () => {
@@ -100,21 +173,38 @@ export function PdfDropZone({
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile();
-                  }}
-                  className="ml-auto h-6 w-6 text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {!isGenerating && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile();
+                    }}
+                    className="ml-auto h-6 w-6 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <p className="text-sm text-green-600 dark:text-green-400">
-                PDF file ready! Click "Generate with AI" to proceed.
-              </p>
+
+              {isGenerating ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <p className="text-sm text-primary font-medium">
+                      {generationProgress}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This may take 30-60 seconds...
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  PDF file ready! Click "Generate Questions" to proceed.
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -174,17 +264,15 @@ export function PdfDropZone({
           )}
         </div>
 
-        {selectedFile && (
+        {selectedFile && !isGenerating && (
           <div className="mt-6 flex justify-center">
             <Button
-              onClick={() => {
-                // This is where you'd trigger the AI generation
-                console.log("Generating with AI for file:", selectedFile.name);
-              }}
+              onClick={generateQuestions}
               className="w-full max-w-sm"
+              disabled={isGenerating}
             >
-              <FileText className="h-4 w-4 mr-2" />
-              Generate with AI
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate Questions
             </Button>
           </div>
         )}

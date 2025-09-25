@@ -3,17 +3,52 @@
 import TriggerSignIn from "@/components/trigger-sign-in";
 import { DashboardNavbar } from "@/components/dashboard-navbar";
 import { PdfDropZone } from "@/components/pdf-drop-zone";
+import { QuestionsDisplay } from "@/components/questions-display";
 import { UserExams } from "@/components/user-exams";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
+
+interface Question {
+  id: number;
+  question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correctAnswer: string;
+  explanation: string;
+}
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useCurrentUser();
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState(0);
+  const [showQuestions, setShowQuestions] = useState(false);
 
   const handleFileSelect = (file: File) => {
     console.log("Selected file:", file.name);
-    // Here you can add your file processing logic
-    // For example: upload to server, process with AI, etc.
+  };
+
+  const handleQuestionsGenerated = (
+    generatedQuestions: Question[],
+    file: string,
+    size: number
+  ) => {
+    setQuestions(generatedQuestions);
+    setFileName(file);
+    setFileSize(size);
+    setShowQuestions(true);
+  };
+
+  const handleReset = () => {
+    setQuestions([]);
+    setFileName("");
+    setFileSize(0);
+    setShowQuestions(false);
   };
 
   // Show loading spinner while checking auth state or storing user in Convex
@@ -52,14 +87,30 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="mb-8">
-            <PdfDropZone onFileSelect={handleFileSelect} />
-          </div>
+          {!showQuestions ? (
+            <div className="mb-8">
+              <PdfDropZone
+                onFileSelect={handleFileSelect}
+                onQuestionsGenerated={handleQuestionsGenerated}
+              />
+            </div>
+          ) : (
+            <div className="mb-8">
+              <QuestionsDisplay
+                questions={questions}
+                fileName={fileName}
+                fileSize={fileSize}
+                onReset={handleReset}
+              />
+            </div>
+          )}
 
-          {/* User Exams Section */}
-          <div className="mt-12">
-            <UserExams userId={user?.id || ""} />
-          </div>
+          {/* User Exams Section - Only show when not viewing questions */}
+          {!showQuestions && (
+            <div className="mt-12">
+              <UserExams userId={user?.id || ""} />
+            </div>
+          )}
         </div>
       </div>
     </>
