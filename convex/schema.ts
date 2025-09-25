@@ -12,8 +12,20 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("byExternalId", ["externalId"]),
 
-  messages: defineTable({
-    body: v.string(),
-    userId: v.id("users"),
-  }),
+  exams: defineTable({
+    teacher_id: v.string(), // Must be linked to a user id
+    creation_date: v.string(), // ISO 8601 timestamp
+    exam_name: v.string(), // Name of the exam
+    exam_description: v.optional(v.string()), // Optional description of the exam
+    question_data: v.array(
+      v.object({
+        question: v.string(), // Question text, may contain LaTeX math expressions
+        answers: v.array(v.string()), // Array of possible answers (typically 4 options)
+        correct_answer: v.string(), // Letter identifier for correct answer (A, B, C, or D)
+        explanation: v.string(), // Detailed explanation, may contain LaTeX math expressions
+      })
+    ),
+  })
+    .index("byTeacherId", ["teacher_id"])
+    .index("byCreationDate", ["creation_date"]),
 });

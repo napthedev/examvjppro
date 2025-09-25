@@ -1,16 +1,30 @@
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 
 export function useCurrentUser() {
-  const { isLoading, isAuthenticated } = useConvexAuth();
-  const user = useQuery(api.users.current);
+  const { isLoaded, isSignedIn, user } = useUser();
 
-  // Combine the authentication state with the user existence check
   return {
-    isLoading: isLoading || (isAuthenticated && user === null),
-    isAuthenticated: isAuthenticated && user !== null,
-    user: user,
+    isLoading: !isLoaded,
+    isAuthenticated: isSignedIn,
+    user: user
+      ? {
+          id: user.id,
+          name:
+            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+            user.username ||
+            "Anonymous",
+          email: user.primaryEmailAddress?.emailAddress,
+          imageUrl: user.imageUrl,
+          externalId: user.id,
+          createdAt: user.createdAt
+            ? new Date(user.createdAt).getTime()
+            : Date.now(),
+          updatedAt: user.updatedAt
+            ? new Date(user.updatedAt).getTime()
+            : Date.now(),
+        }
+      : null,
   };
 }
