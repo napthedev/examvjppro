@@ -6,7 +6,7 @@ export const getExamsByUser = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("exams")
-      .withIndex("byTeacherId", (q) => q.eq("teacher_id", args.userId))
+      .withIndex("byUserId", (q) => q.eq("user_id", args.userId))
       .order("desc")
       .collect();
   },
@@ -21,7 +21,7 @@ export const getExamsByUserWithLimit = query({
     const limit = args.limit || 10;
     return await ctx.db
       .query("exams")
-      .withIndex("byTeacherId", (q) => q.eq("teacher_id", args.userId))
+      .withIndex("byUserId", (q) => q.eq("user_id", args.userId))
       .order("desc")
       .take(limit);
   },

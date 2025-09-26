@@ -13,7 +13,7 @@ export default defineSchema({
   }).index("byExternalId", ["externalId"]),
 
   exams: defineTable({
-    teacher_id: v.string(), // Must be linked to a user id
+    user_id: v.string(), // Must be linked to a user id
     creation_date: v.string(), // ISO 8601 timestamp
     exam_name: v.string(), // Name of the exam
     exam_description: v.optional(v.string()), // Optional description of the exam
@@ -26,6 +26,6 @@ export default defineSchema({
       })
     ),
   })
-    .index("byTeacherId", ["teacher_id"])
+    .index("byUserId", ["user_id"])
     .index("byCreationDate", ["creation_date"]),
 });
