@@ -11,6 +11,7 @@ import { api } from "@/convex/_generated/api";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface Question {
   id: number;
@@ -28,6 +29,7 @@ interface Question {
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useCurrentUser();
   const createExam = useMutation(api.exams.createExam);
+  const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
@@ -63,15 +65,20 @@ export default function Dashboard() {
       // Extract exam name from file name (remove .pdf extension)
       const examName = file.replace(/\.pdf$/i, "");
 
-      await createExam({
+      const examId = await createExam({
         examName,
         examDescription: `Generated from ${file} containing ${generatedQuestions.length} questions`,
         questions: convexQuestions,
       });
 
       toast.success(
-        `Exam "${examName}" saved successfully with ${generatedQuestions.length} questions.`
+        `Exam "${examName}" saved successfully! Redirecting to exam...`
       );
+
+      // Redirect to the exam page after successful save
+      setTimeout(() => {
+        router.push(`/exam/${examId}`);
+      }, 1000);
     } catch (error) {
       console.error("Error saving exam:", error);
       toast.error(

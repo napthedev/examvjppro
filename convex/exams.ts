@@ -35,6 +35,30 @@ export const getExamsByUserWithLimit = query({
   },
 });
 
+export const getExamById = query({
+  args: {
+    examId: v.id("exams"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const exam = await ctx.db.get(args.examId);
+    if (!exam) {
+      throw new Error("Exam not found");
+    }
+
+    // Check if the exam belongs to the authenticated user
+    if (exam.user_id !== userId) {
+      throw new Error("Not authorized to access this exam");
+    }
+
+    return exam;
+  },
+});
+
 export const createExam = mutation({
   args: {
     examName: v.string(),

@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Calendar, BookOpen } from "lucide-react";
+import { FileText, Calendar, BookOpen, ExternalLink } from "lucide-react";
 import { formatDistance } from "date-fns";
+import Link from "next/link";
 
 export function UserExams() {
   const exams = useQuery(api.exams.getExamsByUser);
@@ -74,37 +75,42 @@ export function UserExams() {
           });
 
           return (
-            <Card
-              key={exam._id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-            >
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg line-clamp-2">
-                  {exam.exam_name}
-                </CardTitle>
-                <CardDescription className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-3 w-3" />
-                  Created {timeAgo}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {exam.exam_description && (
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                    {exam.exam_description}
-                  </p>
-                )}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <BookOpen className="h-3 w-3" />
-                    {exam.question_data.length} question
-                    {exam.question_data.length !== 1 ? "s" : ""}
+            <Link key={exam._id} href={`/exam/${exam._id}`}>
+              <Card className="hover:shadow-md transition-all duration-200 cursor-pointer hover:border-primary/50 group">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                      {exam.exam_name}
+                    </CardTitle>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 ml-2 mt-1" />
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    Exam
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                  <CardDescription className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-3 w-3" />
+                    Created {timeAgo}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {exam.exam_description && (
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {exam.exam_description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <BookOpen className="h-3 w-3" />
+                      {exam.question_data.length} question
+                      {exam.question_data.length !== 1 ? "s" : ""}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="text-xs group-hover:border-primary transition-colors"
+                    >
+                      Take Exam
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
       </div>
