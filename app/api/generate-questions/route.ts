@@ -60,9 +60,49 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
+    const settingsString = formData.get("settings") as string;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    // Parse settings with defaults
+    type DifficultyType = "easy" | "medium" | "hard" | "mixed";
+    type ExplanationType = "brief" | "detailed";
+
+    let settings: {
+      numberOfQuestions: number;
+      difficulty: DifficultyType;
+      explanation: ExplanationType;
+    } = {
+      numberOfQuestions: 10,
+      difficulty: "mixed",
+      explanation: "brief",
+    };
+
+    if (settingsString) {
+      try {
+        const parsedSettings = JSON.parse(settingsString);
+        settings = {
+          numberOfQuestions: Math.min(
+            Math.max(parseInt(parsedSettings.numberOfQuestions) || 10, 1),
+            20
+          ),
+          difficulty: (["easy", "medium", "hard", "mixed"].includes(
+            parsedSettings.difficulty
+          )
+            ? parsedSettings.difficulty
+            : "mixed") as DifficultyType,
+          explanation: (["brief", "detailed"].includes(
+            parsedSettings.explanation
+          )
+            ? parsedSettings.explanation
+            : "brief") as ExplanationType,
+        };
+      } catch (error) {
+        console.error("Error parsing settings:", error);
+        // Continue with default settings
+      }
     }
 
     // Validate file type
@@ -89,15 +129,48 @@ export async function POST(request: NextRequest) {
     // Get the generative model
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+    // Build difficulty instruction
+    let difficultyInstruction = "";
+    switch (settings.difficulty) {
+      case "easy":
+        difficultyInstruction =
+          "Generate questions at an EASY difficulty level. Focus on basic concepts, definitions, and straightforward applications. Questions should test fundamental understanding and recall.";
+        break;
+      case "medium":
+        difficultyInstruction =
+          "Generate questions at a MEDIUM difficulty level. Include questions that require analysis, comparison, and application of concepts. Mix conceptual understanding with practical application.";
+        break;
+      case "hard":
+        difficultyInstruction =
+          "Generate questions at a HARD difficulty level. Create challenging questions that require critical thinking, synthesis of multiple concepts, complex problem-solving, and deep analysis.";
+        break;
+      case "mixed":
+        difficultyInstruction =
+          "Generate questions with MIXED difficulty levels, progressing from easy to hard. Start with basic recall questions, move to medium-level analysis questions, and end with challenging synthesis and application questions.";
+        break;
+    }
+
+    // Build explanation instruction
+    const explanationInstruction =
+      settings.explanation === "detailed"
+        ? "Include detailed, comprehensive explanations for the correct answer. Provide context, reasoning, and additional insights that help reinforce understanding. The explanation should be educational and thorough."
+        : "Include brief, concise explanations for the correct answer. Keep explanations clear and to the point, focusing on the key reason why the answer is correct.";
+
     // Create the prompt for generating multiple choice questions
     const prompt = `
-    Please analyze the content of this PDF document and generate 10 multiple choice questions based on the material. 
+    Please analyze the content of this PDF document and generate exactly ${settings.numberOfQuestions} multiple choice questions based on the material. 
+    
+    DIFFICULTY REQUIREMENTS:
+    ${difficultyInstruction}
+    
+    EXPLANATION REQUIREMENTS:
+    ${explanationInstruction} The explanation shouldn't state any references to the original document.
     
     For each question:
-    1. Create a clear, well-structured question
+    1. Create a clear, well-structured question appropriate for the specified difficulty level
     2. Provide 4 answer options (A, B, C, D)
     3. Indicate the correct answer
-    4. Include a brief explanation for the correct answer. The explanation shouldn't state any references to the original document.
+    4. Include an explanation following the detail level specified above
     5. If the content contains mathematical formulas, equations, or symbols, format them using LaTeX notation (enclosed in $ for inline math or $$ for display math)
     6. Make sure strings don't contain characters that break YAML parsing
     7. Keep all text on single lines (no multi-line strings)
@@ -121,10 +194,13 @@ export async function POST(request: NextRequest) {
         Explanation for why A is correct
     
     Important: 
+    - Generate exactly ${settings.numberOfQuestions} questions
+    - Follow the ${settings.difficulty} difficulty level requirement strictly
+    - Provide ${settings.explanation} explanations as specified
     - Use proper LaTeX notation for all mathematical content
     - Make sure the YAML is valid and properly formatted
     - Focus on creating meaningful questions that test understanding
-    - If the document doesn't contain enough content for 10 questions, generate as many as appropriate
+    - If the document doesn't contain enough content for ${settings.numberOfQuestions} questions, generate as many as appropriate but aim for the requested number
     - Return ONLY the YAML array of questions, no additional text or explanations
     `;
 

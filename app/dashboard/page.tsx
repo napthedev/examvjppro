@@ -3,7 +3,6 @@
 import TriggerSignIn from "@/components/trigger-sign-in";
 import { DashboardNavbar } from "@/components/dashboard/dashboard-navbar";
 import { PdfDropZone } from "@/components/dashboard/pdf-drop-zone";
-import { QuestionsDisplay } from "@/components/exam/questions-display";
 import { UserExams } from "@/components/dashboard/user-exams";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useMutation } from "convex/react";
@@ -30,10 +29,6 @@ export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useCurrentUser();
   const createExam = useMutation(api.exams.createExam);
   const router = useRouter();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [fileName, setFileName] = useState("");
-  const [fileSize, setFileSize] = useState(0);
-  const [showQuestions, setShowQuestions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleFileSelect = (file: File) => {
@@ -45,11 +40,6 @@ export default function Dashboard() {
     file: string,
     size: number
   ) => {
-    setQuestions(generatedQuestions);
-    setFileName(file);
-    setFileSize(size);
-    setShowQuestions(true);
-
     // Save exam to Convex
     try {
       setIsSaving(true);
@@ -89,14 +79,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleReset = () => {
-    setQuestions([]);
-    setFileName("");
-    setFileSize(0);
-    setShowQuestions(false);
-    setIsSaving(false);
-  };
-
   // Show loading spinner while checking auth state or storing user in Convex
   if (isLoading) {
     return (
@@ -133,31 +115,17 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {!showQuestions ? (
-            <div className="mb-8">
-              <PdfDropZone
-                onFileSelect={handleFileSelect}
-                onQuestionsGenerated={handleQuestionsGenerated}
-              />
-            </div>
-          ) : (
-            <div className="mb-8">
-              <QuestionsDisplay
-                questions={questions}
-                fileName={fileName}
-                fileSize={fileSize}
-                onReset={handleReset}
-                isSaving={isSaving}
-              />
-            </div>
-          )}
+          <div className="mb-8">
+            <PdfDropZone
+              onFileSelect={handleFileSelect}
+              onQuestionsGenerated={handleQuestionsGenerated}
+            />
+          </div>
 
-          {/* User Exams Section - Only show when not viewing questions */}
-          {!showQuestions && (
-            <div className="mt-12">
-              <UserExams />
-            </div>
-          )}
+          {/* User Exams Section */}
+          <div className="mt-12">
+            <UserExams />
+          </div>
         </div>
       </div>
     </>

@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { PdfSettingsForm, type PdfSettings } from "./pdf-settings-form";
 
 interface Question {
   id: number;
@@ -48,6 +49,7 @@ export function PdfDropZone({
   const [error, setError] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -90,9 +92,21 @@ export function PdfDropZone({
     setError("");
     setIsGenerating(false);
     setGenerationProgress("");
+    setShowSettings(false);
   };
 
-  const generateQuestions = async () => {
+  const handleFileUpload = () => {
+    if (selectedFile) {
+      setShowSettings(true);
+    }
+  };
+
+  const handleBackToUpload = () => {
+    setShowSettings(false);
+    setError("");
+  };
+
+  const generateQuestions = async (settings: PdfSettings) => {
     if (!selectedFile) return;
 
     setIsGenerating(true);
@@ -102,6 +116,7 @@ export function PdfDropZone({
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
+      formData.append("settings", JSON.stringify(settings));
 
       setGenerationProgress("Analyzing document...");
 
@@ -121,6 +136,8 @@ export function PdfDropZone({
 
       if (data.success && data.questions) {
         onQuestionsGenerated(data.questions, data.fileName, data.fileSize);
+        // Reset the component after successful generation
+        removeFile();
       } else {
         throw new Error("Invalid response from server");
       }
@@ -140,6 +157,19 @@ export function PdfDropZone({
       open();
     }
   };
+
+  // Show settings form if file is selected and settings should be shown
+  if (showSettings && selectedFile) {
+    return (
+      <PdfSettingsForm
+        file={selectedFile}
+        onGenerate={generateQuestions}
+        onBack={handleBackToUpload}
+        isGenerating={isGenerating}
+        generationProgress={generationProgress}
+      />
+    );
+  }
 
   return (
     <Card className={cn("w-full max-w-2xl mx-auto", className)}>
@@ -188,23 +218,9 @@ export function PdfDropZone({
                 )}
               </div>
 
-              {isGenerating ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <p className="text-sm text-primary font-medium">
-                      {generationProgress}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    This may take 30-60 seconds...
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  PDF file ready! Click "Generate Questions" to proceed.
-                </p>
-              )}
+              <p className="text-sm text-green-600 dark:text-green-400">
+                PDF file ready! Configure settings to generate questions.
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -267,12 +283,12 @@ export function PdfDropZone({
         {selectedFile && !isGenerating && (
           <div className="mt-6 flex justify-center">
             <Button
-              onClick={generateQuestions}
+              onClick={handleFileUpload}
               className="w-full max-w-sm"
               disabled={isGenerating}
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              Generate Questions
+              Configure & Generate Questions
             </Button>
           </div>
         )}

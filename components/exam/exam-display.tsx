@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   FileText,
   Calendar,
@@ -33,6 +34,10 @@ interface ExamDisplayProps {
 export function ExamDisplay({ exam }: ExamDisplayProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(exam.exam_name);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(
+    exam.exam_description || ""
+  );
   const [isUpdating, setIsUpdating] = useState(false);
 
   const createdAt = new Date(exam.creation_date);
@@ -41,6 +46,7 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
 
   const attempts = useQuery(api.exams.getAttemptsByExam, { examId: exam._id });
   const updateExamName = useMutation(api.exams.updateExamName);
+  const updateExamDescription = useMutation(api.exams.updateExamDescription);
 
   const handleStartEdit = () => {
     setIsEditingName(true);
@@ -86,6 +92,52 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
       handleSaveEdit();
     } else if (e.key === "Escape") {
       handleCancelEdit();
+    }
+  };
+
+  const handleStartEditDescription = () => {
+    setIsEditingDescription(true);
+    setEditedDescription(exam.exam_description || "");
+  };
+
+  const handleCancelEditDescription = () => {
+    setIsEditingDescription(false);
+    setEditedDescription(exam.exam_description || "");
+  };
+
+  const handleSaveEditDescription = async () => {
+    const trimmedDescription = editedDescription.trim();
+
+    if (trimmedDescription === (exam.exam_description || "")) {
+      setIsEditingDescription(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await updateExamDescription({
+        examId: exam._id,
+        examDescription: trimmedDescription || undefined,
+      });
+
+      setIsEditingDescription(false);
+      toast.success("Exam description updated successfully");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update exam description"
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDescriptionKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      handleSaveEditDescription();
+    } else if (e.key === "Escape") {
+      handleCancelEditDescription();
     }
   };
 
@@ -174,11 +226,66 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
                     </>
                   )}
                 </div>
-                {exam.exam_description && (
-                  <p className="text-muted-foreground mb-3">
-                    {exam.exam_description}
-                  </p>
-                )}
+                <div className="mb-3">
+                  {isEditingDescription ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        onKeyDown={handleDescriptionKeyPress}
+                        className="text-muted-foreground border-primary/50 focus:border-primary resize-none"
+                        placeholder="Add a description for this exam..."
+                        rows={3}
+                        autoFocus
+                        disabled={isUpdating}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSaveEditDescription}
+                          disabled={isUpdating}
+                          className="h-7"
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleCancelEditDescription}
+                          disabled={isUpdating}
+                          className="h-7"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancel
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                          Press Ctrl+Enter to save, Esc to cancel
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 group">
+                      {exam.exam_description ? (
+                        <p className="text-muted-foreground flex-1">
+                          {exam.exam_description}
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground/60 italic flex-1">
+                          No description provided
+                        </p>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleStartEditDescription}
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity"
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
@@ -220,14 +327,63 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
               </ul>
             </div>
 
-            {exam.exam_description && (
-              <div>
-                <h4 className="font-medium mb-2">Description</h4>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-medium">Description</h4>
+                {!isEditingDescription && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleStartEditDescription}
+                    className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              {isEditingDescription ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    onKeyDown={handleDescriptionKeyPress}
+                    className="text-sm border-primary/50 focus:border-primary resize-none"
+                    placeholder="Add a description for this exam..."
+                    rows={4}
+                    disabled={isUpdating}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveEditDescription}
+                      disabled={isUpdating}
+                      className="h-7"
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCancelEditDescription}
+                      disabled={isUpdating}
+                      className="h-7"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : exam.exam_description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {exam.exam_description}
                 </p>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-muted-foreground/60 italic">
+                  No description provided. Click the edit button to add one.
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

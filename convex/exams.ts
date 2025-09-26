@@ -204,3 +204,28 @@ export const updateExamName = mutation({
     return { success: true };
   },
 });
+
+export const updateExamDescription = mutation({
+  args: {
+    examId: v.id("exams"),
+    examDescription: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    // Verify the exam belongs to the user
+    const exam = await ctx.db.get(args.examId);
+    if (!exam || exam.user_id !== userId) {
+      throw new Error("Not authorized to update this exam");
+    }
+
+    await ctx.db.patch(args.examId, {
+      exam_description: args.examDescription?.trim() || undefined,
+    });
+
+    return { success: true };
+  },
+});
