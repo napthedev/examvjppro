@@ -18,7 +18,8 @@ import Link from "next/link";
 export function UserExams() {
   const exams = useQuery(api.exams.getExamsByUser);
 
-  if (exams === undefined) {
+  // if (exams === undefined) {
+  if (true) {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-bold mb-4">Your Exams</h2>
@@ -82,7 +83,6 @@ export function UserExams() {
                     <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
                       {exam.exam_name}
                     </CardTitle>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 ml-2 mt-1" />
                   </div>
                   <CardDescription className="flex items-center gap-2 text-sm">
                     <Calendar className="h-3 w-3" />

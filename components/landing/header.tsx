@@ -75,7 +75,7 @@ export function Header() {
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard"
-                        className="flex items-center cursor-pointer transition hover:!bg-primary hover:!text-primary-foreground"
+                        className="flex items-center cursor-pointer transition"
                       >
                         <User className="mr-2 h-4 w-4 text-inherit" />
                         Dashboard

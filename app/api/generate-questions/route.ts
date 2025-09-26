@@ -99,30 +99,26 @@ export async function POST(request: NextRequest) {
     3. Indicate the correct answer
     4. Include a brief explanation for the correct answer. The explanation shouldn't state any references to the original document.
     5. If the content contains mathematical formulas, equations, or symbols, format them using LaTeX notation (enclosed in $ for inline math or $$ for display math)
-    6. Ensure questions cover different difficulty levels and key concepts from the document
-    7. Make sure strings don't contain characters that break YAML parsing
-    8. Keep all text on single lines (no multi-line strings)
-    
+    6. Make sure strings don't contain characters that break YAML parsing
+    7. Keep all text on single lines (no multi-line strings)
+
     Format your response as valid YAML with this exact structure (return only the questions array):
     
     - id: 1
-      question: "Question text with LaTeX if needed: $E = mc^2$"
+      question: |
+        Question text with LaTeX if needed: $E = mc^2$
       options:
-        A: "Option A text"
-        B: "Option B text"
-        C: "Option C text"
-        D: "Option D text"
+        A: |
+          Option A text
+        B: |
+          Option B text
+        C: |
+          Option C text
+        D: |
+          Option D text
       correctAnswer: "A"
-      explanation: "Explanation for why A is correct"
-    - id: 2
-      question: "Second question text"
-      options:
-        A: "Option A text"
-        B: "Option B text"
-        C: "Option C text"
-        D: "Option D text"
-      correctAnswer: "B"
-      explanation: "Explanation for why B is correct"
+      explanation: |
+        Explanation for why A is correct
     
     Important: 
     - Use proper LaTeX notation for all mathematical content

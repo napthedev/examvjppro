@@ -7,10 +7,10 @@ export function CTASection() {
     <section className="py-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-12">
+          <div className="bg-gradient-to-r from-primary/10 to-green-500/10 rounded-2xl p-12">
             <div className="flex items-center justify-center space-x-2 mb-6">
-              <Sparkles className="h-6 w-6 text-accent" />
-              <span className="text-accent font-medium">
+              <Sparkles className="h-6 w-6 text-green-500" />
+              <span className="text-green-500 font-medium">
                 Ready to get started?
               </span>
             </div>

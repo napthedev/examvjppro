@@ -8,7 +8,7 @@ export function HeroSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-4xl mx-auto">
           <div className="flex items-center justify-center space-x-2 mb-6">
-            <div className="flex items-center space-x-1 bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
+            <div className="flex items-center space-x-1 bg-green-500/10 text-green-600 px-3 py-1 rounded-full text-sm font-medium">
               <Zap className="h-4 w-4" />
               <span>AI-Powered</span>
             </div>

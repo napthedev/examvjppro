@@ -44,7 +44,10 @@ export function TestimonialsSection() {
               <CardContent className="p-6">
                 <div className="flex items-center space-x-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-green-500 text-green-500"
+                    />
                   ))}
                 </div>
                 <p className="text-muted-foreground mb-4 leading-relaxed">
