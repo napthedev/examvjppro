@@ -1,400 +1,379 @@
 "use client";
 
 import React, { useState } from "react";
-import { MathJax, MathJaxContext } from "better-react-mathjax";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import {
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
   FileText,
   Calendar,
   BookOpen,
   ChevronLeft,
+  Play,
+  User,
   Clock,
   Target,
+  TrendingUp,
+  Edit2,
+  Save,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { formatDistance } from "date-fns";
 import Link from "next/link";
 import { Doc } from "@/convex/_generated/dataModel";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 
 interface ExamDisplayProps {
   exam: Doc<"exams">;
 }
 
-interface ConvertedQuestion {
-  id: number;
-  question: string;
-  options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-  };
-  correctAnswer: string;
-  explanation: string;
-}
-
 export function ExamDisplay({ exam }: ExamDisplayProps) {
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<number, string>
-  >({});
-  const [showResults, setShowResults] = useState(false);
-  const [startTime] = useState<Date>(new Date());
-  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(exam.exam_name);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Convert Convex exam data to the format expected by the questions display
-  const questions: ConvertedQuestion[] = exam.question_data.map((q, index) => ({
-    id: index + 1,
-    question: q.question,
-    options: {
-      A: q.answers[0] || "",
-      B: q.answers[1] || "",
-      C: q.answers[2] || "",
-      D: q.answers[3] || "",
-    },
-    correctAnswer: q.correct_answer,
-    explanation: q.explanation,
-  }));
+  const createdAt = new Date(exam.creation_date);
+  const timeAgo = formatDistance(createdAt, new Date(), { addSuffix: true });
+  const questionCount = exam.question_data.length;
 
-  const handleAnswerSelect = (questionId: number, answer: string) => {
-    if (!showResults) {
-      setSelectedAnswers((prev) => ({
-        ...prev,
-        [questionId]: answer,
-      }));
+  const attempts = useQuery(api.exams.getAttemptsByExam, { examId: exam._id });
+  const updateExamName = useMutation(api.exams.updateExamName);
+
+  const handleStartEdit = () => {
+    setIsEditingName(true);
+    setEditedName(exam.exam_name);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName(exam.exam_name);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedName.trim()) {
+      toast.error("Exam name cannot be empty");
+      return;
+    }
+
+    if (editedName.trim() === exam.exam_name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await updateExamName({
+        examId: exam._id,
+        examName: editedName.trim(),
+      });
+
+      setIsEditingName(false);
+      toast.success("Exam name updated successfully");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update exam name"
+      );
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const handleSubmit = () => {
-    setShowResults(true);
-    setEndTime(new Date());
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveEdit();
+    } else if (e.key === "Escape") {
+      handleCancelEdit();
+    }
   };
 
-  const handleRetake = () => {
-    setSelectedAnswers({});
-    setShowResults(false);
-    setEndTime(null);
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const getScore = () => {
-    const correctAnswers = questions.filter(
-      (q) => selectedAnswers[q.id] === q.correctAnswer
-    ).length;
-    return { correct: correctAnswers, total: questions.length };
+  const getBestScore = () => {
+    if (!attempts || attempts.length === 0) return null;
+    return Math.max(...attempts.map((attempt) => attempt.score));
   };
 
-  const getTimeTaken = () => {
-    if (!endTime) return null;
-    const timeDiff = endTime.getTime() - startTime.getTime();
-    const minutes = Math.floor(timeDiff / 60000);
-    const seconds = Math.floor((timeDiff % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const getAverageScore = () => {
+    if (!attempts || attempts.length === 0) return null;
+    const totalScore = attempts.reduce(
+      (sum, attempt) => sum + attempt.score,
+      0
+    );
+    return Math.round(totalScore / attempts.length);
   };
-
-  const mathJaxConfig = {
-    loader: { load: ["[tex]/html"] },
-    tex: {
-      packages: { "[+]": ["html"] },
-      inlineMath: [
-        ["$", "$"],
-        ["\\(", "\\)"],
-      ],
-      displayMath: [
-        ["$$", "$$"],
-        ["\\[", "\\]"],
-      ],
-    },
-  };
-
-  const { correct, total } = getScore();
-  const createdAt = new Date(exam.creation_date);
-  const timeAgo = formatDistance(createdAt, new Date(), { addSuffix: true });
 
   return (
-    <MathJaxContext config={mathJaxConfig}>
-      <div className="space-y-6">
-        {/* Back Button */}
-        <Button variant="outline" asChild className="mb-4">
-          <Link href="/dashboard">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </Button>
+    <div className="space-y-6">
+      {/* Back Button */}
+      <Button variant="outline" asChild className="mb-4">
+        <Link href="/dashboard">
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Link>
+      </Button>
 
-        {/* Exam Header */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-3">
-                <FileText className="h-6 w-6 text-primary mt-1" />
-                <div className="flex-1">
-                  <CardTitle className="text-2xl mb-2">
-                    {exam.exam_name}
-                  </CardTitle>
-                  {exam.exam_description && (
-                    <p className="text-muted-foreground mb-3">
-                      {exam.exam_description}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Created {timeAgo}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
-                      {questions.length} question
-                      {questions.length !== 1 ? "s" : ""}
-                    </div>
-                    {endTime && (
+      {/* Exam Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <FileText className="h-6 w-6 text-primary mt-1" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  {isEditingName ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        className="text-2xl font-semibold h-auto py-1 border-primary/50 focus:border-primary"
+                        autoFocus
+                        disabled={isUpdating}
+                      />
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        Time taken: {getTimeTaken()}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleSaveEdit}
+                          disabled={isUpdating}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Save className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleCancelEdit}
+                          disabled={isUpdating}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4 text-red-600" />
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-end space-y-2">
-                {showResults && (
-                  <Badge
-                    variant={correct >= total * 0.7 ? "default" : "destructive"}
-                    className="text-sm"
-                  >
-                    Score: {correct}/{total} (
-                    {Math.round((correct / total) * 100)}%)
-                  </Badge>
-                )}
-                <div className="flex flex-col items-end space-y-2">
-                  <Badge variant="outline">
-                    {Object.keys(selectedAnswers).length}/{questions.length}{" "}
-                    answered
-                  </Badge>
-                  {!showResults && (
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Target className="h-3 w-3" />
-                      <span>
-                        {Math.round(
-                          (Object.keys(selectedAnswers).length /
-                            questions.length) *
-                            100
-                        )}
-                        % complete
-                      </span>
                     </div>
+                  ) : (
+                    <>
+                      <CardTitle className="text-2xl">
+                        {exam.exam_name}
+                      </CardTitle>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleStartEdit}
+                        className="h-8 w-8 p-0 ml-2 opacity-60 hover:opacity-100"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
+                </div>
+                {exam.exam_description && (
+                  <p className="text-muted-foreground mb-3">
+                    {exam.exam_description}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Created {timeAgo}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <BookOpen className="h-4 w-4" />
+                    {questionCount} question{questionCount !== 1 ? "s" : ""}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    Personal Exam
+                  </div>
                 </div>
               </div>
             </div>
-          </CardHeader>
-        </Card>
+            <div className="flex flex-col items-end space-y-2">
+              <Badge variant="secondary">{questionCount} Questions</Badge>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
-        {/* Progress Bar (shown while taking exam) */}
-        {!showResults && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Progress</span>
-                  <span className="text-muted-foreground">
-                    {Object.keys(selectedAnswers).length} of {questions.length}{" "}
-                    questions
-                  </span>
-                </div>
-                <Progress
-                  value={
-                    (Object.keys(selectedAnswers).length / questions.length) *
-                    100
-                  }
-                  className="h-2"
-                />
+      {/* Exam Description Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">About This Exam</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Exam Details</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Contains {questionCount} multiple-choice questions</li>
+                <li>• Each question has 4 answer options (A, B, C, D)</li>
+                <li>• Includes detailed explanations for each answer</li>
+                <li>• No time limit - take as long as you need</li>
+                <li>• You can retake the exam as many times as you want</li>
+              </ul>
+            </div>
+
+            {exam.exam_description && (
+              <div>
+                <h4 className="font-medium mb-2">Description</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {exam.exam_description}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Results Summary (shown after submission) */}
-        {showResults && (
-          <Card
-            className={cn(
-              "border-2",
-              correct >= total * 0.7
-                ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                : "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
             )}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">
-                    {correct >= total * 0.7
-                      ? "Great job! 🎉"
-                      : "Keep practicing! 📚"}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    You scored {correct} out of {total} questions correctly.
-                    {getTimeTaken() && ` Time taken: ${getTimeTaken()}.`}
-                  </p>
-                </div>
-                <Button onClick={handleRetake} variant="outline">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Retake Exam
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Questions */}
-        <div className="space-y-4">
-          {questions.map((question, index) => {
-            const userAnswer = selectedAnswers[question.id];
-            const isCorrect = userAnswer === question.correctAnswer;
-            const isAnswered = userAnswer !== undefined;
-
-            return (
-              <Card
-                key={question.id}
-                className={cn(
-                  "transition-all duration-200",
-                  showResults &&
-                    isAnswered &&
-                    (isCorrect
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                      : "border-red-500 bg-red-50 dark:bg-red-950/20")
-                )}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-base font-medium">
-                      <span className="text-primary mr-2">Q{index + 1}.</span>
-                      <MathJax>{question.question}</MathJax>
-                    </CardTitle>
-                    {showResults && isAnswered && (
-                      <div className="flex-shrink-0">
-                        {isCorrect ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Object.entries(question.options).map(([letter, text]) => {
-                      const isSelected = userAnswer === letter;
-                      const isCorrectOption = letter === question.correctAnswer;
-
-                      return (
-                        <button
-                          key={letter}
-                          onClick={() =>
-                            handleAnswerSelect(question.id, letter)
-                          }
-                          disabled={showResults}
-                          className={cn(
-                            "w-full text-left p-3 rounded-md border transition-all duration-200",
-                            "hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
-                            !showResults &&
-                              isSelected &&
-                              "bg-primary/10 border-primary",
-                            !showResults &&
-                              !isSelected &&
-                              "border-border hover:border-muted-foreground/30",
-                            showResults &&
-                              isCorrectOption &&
-                              "bg-green-100 border-green-500 dark:bg-green-950/30",
-                            showResults &&
-                              isSelected &&
-                              !isCorrectOption &&
-                              "bg-red-100 border-red-500 dark:bg-red-950/30",
-                            showResults && "cursor-default hover:bg-current"
-                          )}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className={cn(
-                                "flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-medium",
-                                !showResults &&
-                                  isSelected &&
-                                  "bg-primary text-primary-foreground border-primary",
-                                !showResults &&
-                                  !isSelected &&
-                                  "border-muted-foreground/30",
-                                showResults &&
-                                  isCorrectOption &&
-                                  "bg-green-600 text-white border-green-600",
-                                showResults &&
-                                  isSelected &&
-                                  !isCorrectOption &&
-                                  "bg-red-600 text-white border-red-600"
-                              )}
-                            >
-                              {letter}
-                            </div>
-                            <div className="flex-1">
-                              <MathJax>{text}</MathJax>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Show explanation after results */}
-                  {showResults && (
-                    <div className="mt-4 p-3 rounded-md bg-muted/50 border">
-                      <p className="text-sm font-medium text-muted-foreground mb-1">
-                        Explanation:
-                      </p>
-                      <div className="text-sm">
-                        <MathJax>{question.explanation}</MathJax>
-                      </div>
-                      {userAnswer && userAnswer !== question.correctAnswer && (
-                        <p className="text-sm text-red-600 mt-2">
-                          Your answer: <strong>{userAnswer}</strong> • Correct
-                          answer: <strong>{question.correctAnswer}</strong>
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Submit/Navigation buttons */}
-        <div className="flex justify-center space-x-3 pb-8">
-          {!showResults ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={Object.keys(selectedAnswers).length < questions.length}
-              size="lg"
-            >
-              Submit Exam ({Object.keys(selectedAnswers).length}/
-              {questions.length})
-            </Button>
-          ) : (
-            <>
-              <Button onClick={handleRetake} variant="outline" size="lg">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Retake Exam
+      {/* Action Buttons */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold mb-1">Ready to start?</h3>
+              <p className="text-sm text-muted-foreground">
+                Take your time and do your best. Good luck!
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard">
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Link>
               </Button>
               <Button asChild size="lg">
-                <Link href="/dashboard">Back to Dashboard</Link>
+                <Link href={`/exam/${exam._id}/test`}>
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Exam
+                </Link>
               </Button>
-            </>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Attempts History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Your Attempts {attempts !== undefined && `(${attempts.length})`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {attempts === undefined ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="animate-pulse">Loading attempts...</div>
+            </div>
+          ) : attempts.length > 0 ? (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {attempts.map((attempt, index) => {
+                const percentage = Math.round(
+                  (attempt.score / questionCount) * 100
+                );
+                const attemptDate = new Date(attempt.attempt_date);
+
+                return (
+                  <Link
+                    key={attempt._id}
+                    href={`/exam/${exam._id}/attempt/${attempt._id}`}
+                    className="block"
+                  >
+                    <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <Badge
+                          variant={percentage >= 70 ? "default" : "secondary"}
+                        >
+                          #{index + 1}
+                        </Badge>
+                        <div>
+                          <div className="font-medium">
+                            {attempt.score}/{questionCount} ({percentage}%)
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {attemptDate.toLocaleDateString()} at{" "}
+                            {attemptDate.toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatTime(attempt.time_taken)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Click to review
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="text-lg font-medium mb-1">No attempts yet</p>
+              <p className="text-sm">
+                Take your first exam to see your progress here.
+              </p>
+            </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <BookOpen className="h-8 w-8 text-primary mx-auto mb-2" />
+            <div className="text-2xl font-bold">{questionCount}</div>
+            <div className="text-sm text-muted-foreground">Questions</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Target className="h-8 w-8 text-primary mx-auto mb-2" />
+            <div className="text-2xl font-bold">
+              {attempts && attempts.length > 0 ? attempts.length : 0}
+            </div>
+            <div className="text-sm text-muted-foreground">Attempts</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <TrendingUp className="h-8 w-8 text-primary mx-auto mb-2" />
+            <div className="text-2xl font-bold">
+              {getBestScore() !== null
+                ? `${getBestScore()}/${questionCount}`
+                : "N/A"}
+            </div>
+            <div className="text-sm text-muted-foreground">Best Score</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Calendar className="h-8 w-8 text-primary mx-auto mb-2" />
+            <div className="text-2xl font-bold">
+              {getAverageScore() !== null
+                ? `${getAverageScore()}/${questionCount}`
+                : "N/A"}
+            </div>
+            <div className="text-sm text-muted-foreground">Average</div>
+          </CardContent>
+        </Card>
       </div>
-    </MathJaxContext>
+    </div>
   );
 }

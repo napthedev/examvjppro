@@ -28,4 +28,19 @@ export default defineSchema({
   })
     .index("byUserId", ["user_id"])
     .index("byCreationDate", ["creation_date"]),
+
+  attempts: defineTable({
+    exam_id: v.id("exams"), // Links to an exam in the exams table
+    score: v.number(), // Score achieved on the exam
+    time_taken: v.number(), // Time taken to complete the exam (in seconds)
+    attempt_date: v.number(), // Timestamp when the attempt was made
+    answers: v.array(
+      v.object({
+        is_correct: v.boolean(), // Whether the answer was correct
+        answer: v.string(), // The selected answer (A, B, C, or D)
+      })
+    ),
+  })
+    .index("byExamId", ["exam_id"])
+    .index("byAttemptDate", ["attempt_date"]),
 });
