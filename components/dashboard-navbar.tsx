@@ -37,7 +37,10 @@ export function DashboardNavbar() {
             <Authenticated>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                  >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.imageUrl} alt={user?.name} />
                       <AvatarFallback>
@@ -58,8 +61,11 @@ export function DashboardNavbar() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                  <DropdownMenuItem
+                    onClick={() => signOut()}
+                    className="cursor-pointer transition"
+                  >
+                    <LogOut className="mr-2 h-4 w-4 text-inherit" />
                     <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

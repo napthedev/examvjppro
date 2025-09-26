@@ -16,8 +16,6 @@ import type {
 import type * as auth from "../auth.js";
 import type * as exams from "../exams.js";
 import type * as http from "../http.js";
-import type * as otp_ResendOTP from "../otp/ResendOTP.js";
-import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
 import type * as users from "../users.js";
 
 /**
@@ -32,8 +30,6 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   exams: typeof exams;
   http: typeof http;
-  "otp/ResendOTP": typeof otp_ResendOTP;
-  "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

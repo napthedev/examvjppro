@@ -1,15 +1,25 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FileText, Menu, X } from "lucide-react";
+import { FileText, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton, UserButton } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import LinkButton from "../link-button";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { signOut } = useAuthActions();
+  const { user } = useCurrentUser();
 
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,14 +56,45 @@ export function Header() {
           <div className="flex items-center space-x-2 md:space-x-4">
             <>
               <Authenticated>
-                <UserButton />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="relative h-8 w-8 rounded-full"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.imageUrl} alt={user?.name} />
+                        <AvatarFallback>
+                          {user?.name?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center cursor-pointer transition hover:!bg-primary hover:!text-primary-foreground"
+                      >
+                        <User className="mr-2 h-4 w-4 text-inherit" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => signOut()}
+                      className="cursor-pointer transition"
+                    >
+                      <LogOut className="mr-2 h-4 w-4 text-inherit" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </Authenticated>
               <Unauthenticated>
-                <SignInButton mode="modal">
-                  <Button variant="ghost" className="">
-                    Sign In
-                  </Button>
-                </SignInButton>
+                <Button variant="ghost" asChild>
+                  <Link href="/signin">Sign In</Link>
+                </Button>
               </Unauthenticated>
             </>
             <LinkButton
