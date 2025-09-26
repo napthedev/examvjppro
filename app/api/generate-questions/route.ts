@@ -1,8 +1,52 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  yamlToJson,
+  type Question,
+  type QuestionOption,
+} from "@/lib/yaml-converter";
 
 // Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+
+// Helper function to validate and normalize question data
+function validateAndNormalizeQuestions(data: any): Question[] {
+  if (!Array.isArray(data)) {
+    throw new Error("Response must be an array of questions");
+  }
+
+  return data.map((item, index) => {
+    if (!item || typeof item !== "object") {
+      throw new Error(`Question at index ${index} is not a valid object`);
+    }
+
+    const question: Question = {
+      id: item.id || index + 1,
+      question: item.question || "",
+      options: {
+        A: item.options?.A || "",
+        B: item.options?.B || "",
+        C: item.options?.C || "",
+        D: item.options?.D || "",
+      },
+      correctAnswer: item.correctAnswer || "A",
+      explanation: item.explanation || "",
+    };
+
+    // Validate required fields
+    if (!question.question.trim()) {
+      throw new Error(`Question at index ${index} has empty question text`);
+    }
+
+    if (!["A", "B", "C", "D"].includes(question.correctAnswer)) {
+      throw new Error(
+        `Question at index ${index} has invalid correctAnswer: ${question.correctAnswer}`
+      );
+    }
+
+    return question;
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,30 +100,36 @@ export async function POST(request: NextRequest) {
     4. Include a brief explanation for the correct answer. The explanation shouldn't state any references to the original document.
     5. If the content contains mathematical formulas, equations, or symbols, format them using LaTeX notation (enclosed in $ for inline math or $$ for display math)
     6. Ensure questions cover different difficulty levels and key concepts from the document
-    7. Escape the special characters in the JSON to ensure valid formatting.
-    8. The output strings in JSON shouldn't be expanding on multiple lines.
+    7. Make sure strings don't contain characters that break YAML parsing
+    8. Keep all text on single lines (no multi-line strings)
     
-    Format your response as a JSON array with this structure:
-    [
-      {
-        "id": 1,
-        "question": "Question text with LaTeX if needed: $E = mc^2$",
-        "options": {
-          "A": "Option A text",
-          "B": "Option B text", 
-          "C": "Option C text",
-          "D": "Option D text"
-        },
-        "correctAnswer": "A",
-        "explanation": "Explanation for why A is correct"
-      }
-    ]
+    Format your response as valid YAML with this exact structure (return only the questions array):
+    
+    - id: 1
+      question: "Question text with LaTeX if needed: $E = mc^2$"
+      options:
+        A: "Option A text"
+        B: "Option B text"
+        C: "Option C text"
+        D: "Option D text"
+      correctAnswer: "A"
+      explanation: "Explanation for why A is correct"
+    - id: 2
+      question: "Second question text"
+      options:
+        A: "Option A text"
+        B: "Option B text"
+        C: "Option C text"
+        D: "Option D text"
+      correctAnswer: "B"
+      explanation: "Explanation for why B is correct"
     
     Important: 
     - Use proper LaTeX notation for all mathematical content
-    - Make sure the JSON is valid and properly formatted
+    - Make sure the YAML is valid and properly formatted
     - Focus on creating meaningful questions that test understanding
     - If the document doesn't contain enough content for 10 questions, generate as many as appropriate
+    - Return ONLY the YAML array of questions, no additional text or explanations
     `;
 
     // Prepare the file data for Google AI
@@ -95,33 +145,65 @@ export async function POST(request: NextRequest) {
     const response = result.response;
     const text = response.text();
 
-    // Try to parse the JSON response
+    // Try to parse the YAML response and convert to JSON
     let questions;
     try {
-      // Remove any markdown code block formatting if present
-      const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
-      questions = JSON.parse(cleanedText);
+      // Parse YAML to JavaScript object using utility function
+      const yamlData = yamlToJson(text);
+
+      // Convert to JSON-compatible format
+      questions = Array.isArray(yamlData) ? yamlData : [];
+
+      console.log("Parsed YAML data:", JSON.stringify(questions, null, 2));
     } catch (parseError) {
-      console.error("Failed to parse AI response:", text);
+      console.error("Failed to parse YAML response:", text);
+      console.error("Parse error:", parseError);
+
+      // Fallback: try to parse as JSON in case AI returns JSON instead
+      try {
+        const jsonCleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
+        questions = JSON.parse(jsonCleanedText);
+        console.log("Successfully parsed as fallback JSON");
+      } catch (jsonParseError) {
+        return NextResponse.json(
+          {
+            error:
+              "Failed to parse AI response as YAML or JSON. Please try again.",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Validate and normalize the response structure
+    let normalizedQuestions: Question[];
+    try {
+      normalizedQuestions = validateAndNormalizeQuestions(questions);
+    } catch (validationError) {
+      console.error("Validation error:", validationError);
+      const errorMessage =
+        validationError instanceof Error
+          ? validationError.message
+          : "Unknown validation error";
       return NextResponse.json(
-        { error: "Failed to parse AI response. Please try again." },
+        { error: `Invalid response format from AI: ${errorMessage}` },
         { status: 500 }
       );
     }
 
-    // Validate the response structure
-    if (!Array.isArray(questions)) {
+    if (normalizedQuestions.length === 0) {
       return NextResponse.json(
-        { error: "Invalid response format from AI" },
+        { error: "No valid questions were generated from the document" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      questions,
+      questions: normalizedQuestions,
       fileName: file.name,
       fileSize: file.size,
+      questionCount: normalizedQuestions.length,
     });
   } catch (error) {
     console.error("Error generating questions:", error);

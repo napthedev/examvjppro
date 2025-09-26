@@ -6,8 +6,11 @@ import { PdfDropZone } from "@/components/pdf-drop-zone";
 import { QuestionsDisplay } from "@/components/questions-display";
 import { UserExams } from "@/components/user-exams";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface Question {
   id: number;
@@ -24,16 +27,18 @@ interface Question {
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useCurrentUser();
+  const createExam = useMutation(api.exams.createExam);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleFileSelect = (file: File) => {
     console.log("Selected file:", file.name);
   };
 
-  const handleQuestionsGenerated = (
+  const handleQuestionsGenerated = async (
     generatedQuestions: Question[],
     file: string,
     size: number
@@ -42,6 +47,39 @@ export default function Dashboard() {
     setFileName(file);
     setFileSize(size);
     setShowQuestions(true);
+
+    // Save exam to Convex
+    try {
+      setIsSaving(true);
+
+      // Convert questions to the format expected by Convex schema
+      const convexQuestions = generatedQuestions.map((q) => ({
+        question: q.question,
+        answers: [q.options.A, q.options.B, q.options.C, q.options.D],
+        correct_answer: q.correctAnswer,
+        explanation: q.explanation,
+      }));
+
+      // Extract exam name from file name (remove .pdf extension)
+      const examName = file.replace(/\.pdf$/i, "");
+
+      await createExam({
+        examName,
+        examDescription: `Generated from ${file} containing ${generatedQuestions.length} questions`,
+        questions: convexQuestions,
+      });
+
+      toast.success(
+        `Exam "${examName}" saved successfully with ${generatedQuestions.length} questions.`
+      );
+    } catch (error) {
+      console.error("Error saving exam:", error);
+      toast.error(
+        "Failed to save exam. The exam was generated but couldn't be saved. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleReset = () => {
@@ -49,6 +87,7 @@ export default function Dashboard() {
     setFileName("");
     setFileSize(0);
     setShowQuestions(false);
+    setIsSaving(false);
   };
 
   // Show loading spinner while checking auth state or storing user in Convex
@@ -101,6 +140,7 @@ export default function Dashboard() {
                 fileName={fileName}
                 fileSize={fileSize}
                 onReset={handleReset}
+                isSaving={isSaving}
               />
             </div>
           )}

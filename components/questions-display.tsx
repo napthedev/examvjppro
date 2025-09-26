@@ -5,7 +5,13 @@ import { MathJax, MathJaxContext } from "better-react-mathjax";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, RotateCcw, FileText } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  FileText,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Question {
@@ -26,6 +32,7 @@ interface QuestionsDisplayProps {
   fileName: string;
   fileSize: number;
   onReset: () => void;
+  isSaving?: boolean;
 }
 
 export function QuestionsDisplay({
@@ -33,6 +40,7 @@ export function QuestionsDisplay({
   fileName,
   fileSize,
   onReset,
+  isSaving = false,
 }: QuestionsDisplayProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string>
@@ -105,12 +113,17 @@ export function QuestionsDisplay({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-primary" />
+                {isSaving ? (
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                ) : (
+                  <FileText className="h-5 w-5 text-primary" />
+                )}
                 <div>
                   <CardTitle className="text-lg">{fileName}</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {(fileSize / 1024 / 1024).toFixed(2)} MB •{" "}
                     {questions.length} questions generated
+                    {isSaving && " • Saving exam..."}
                   </p>
                 </div>
               </div>

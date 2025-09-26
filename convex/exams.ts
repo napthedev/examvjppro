@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const getExamsByUser = query({
@@ -32,5 +32,36 @@ export const getExamsByUserWithLimit = query({
       .withIndex("byUserId", (q) => q.eq("user_id", userId))
       .order("desc")
       .take(limit);
+  },
+});
+
+export const createExam = mutation({
+  args: {
+    examName: v.string(),
+    examDescription: v.optional(v.string()),
+    questions: v.array(
+      v.object({
+        question: v.string(),
+        answers: v.array(v.string()),
+        correct_answer: v.string(),
+        explanation: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const examId = await ctx.db.insert("exams", {
+      user_id: userId,
+      creation_date: new Date().toISOString(),
+      exam_name: args.examName,
+      exam_description: args.examDescription,
+      question_data: args.questions,
+    });
+
+    return examId;
   },
 });
