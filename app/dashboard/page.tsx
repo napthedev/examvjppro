@@ -108,7 +108,7 @@ export default function Dashboard() {
           {/* User Exams Section - Only show when not viewing questions */}
           {!showQuestions && (
             <div className="mt-12">
-              <UserExams userId={user?.id || ""} />
+              <UserExams />
             </div>
           )}
         </div>

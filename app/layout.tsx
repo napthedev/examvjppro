@@ -4,9 +4,8 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
-import { ClerkProvider } from "@clerk/nextjs";
 import ConvexClientProvider from "../components/convex-client-provider";
-import { dark } from "@clerk/themes";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,18 +20,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
-      <ConvexClientProvider>
-        {/* Wrap the layout inside ConvexClientProvider */}
-        <html lang="en" className="dark">
-          <body
-            className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}
-          >
-            <Suspense fallback={null}>{children}</Suspense>
-            <Analytics />
-          </body>
-        </html>
-      </ConvexClientProvider>
-    </ClerkProvider>
+    <ConvexClientProvider>
+      <html lang="en" className="dark">
+        <body
+          className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}
+        >
+          <Suspense fallback={null}>{children}</Suspense>
+          <Toaster />
+          <Analytics />
+        </body>
+      </html>
+    </ConvexClientProvider>
   );
 }

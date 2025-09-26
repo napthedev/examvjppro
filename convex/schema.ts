@@ -1,19 +1,19 @@
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  ...authTables,
+  // Extend the users table with custom fields while keeping auth functionality
   users: defineTable({
-    name: v.string(),
-    // this is the Clerk ID, stored in the subject JWT field
-    externalId: v.string(),
+    name: v.optional(v.string()),
     email: v.optional(v.string()),
-    imageUrl: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("byExternalId", ["externalId"]),
+    emailVerificationTime: v.optional(v.number()),
+    image: v.optional(v.string()),
+  }).index("email", ["email"]),
 
   exams: defineTable({
-    user_id: v.string(), // Must be linked to a user id
+    user_id: v.id("users"), // Must be linked to a user id
     creation_date: v.string(), // ISO 8601 timestamp
     exam_name: v.string(), // Name of the exam
     exam_description: v.optional(v.string()), // Optional description of the exam

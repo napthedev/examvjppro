@@ -1,12 +1,12 @@
 import { useEffect } from "react";
-import { useClerk } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 const TriggerSignIn = () => {
-  const { redirectToSignIn } = useClerk();
+  const router = useRouter();
 
   useEffect(() => {
-    redirectToSignIn();
-  }, [redirectToSignIn]);
+    router.push("/signin");
+  }, [router]);
 
   return null;
 };

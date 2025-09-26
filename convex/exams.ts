@@ -1,12 +1,17 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const getExamsByUser = query({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
     return await ctx.db
       .query("exams")
-      .withIndex("byUserId", (q) => q.eq("user_id", args.userId))
+      .withIndex("byUserId", (q) => q.eq("user_id", userId))
       .order("desc")
       .collect();
   },
@@ -14,14 +19,17 @@ export const getExamsByUser = query({
 
 export const getExamsByUserWithLimit = query({
   args: {
-    userId: v.string(),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
     const limit = args.limit || 10;
     return await ctx.db
       .query("exams")
-      .withIndex("byUserId", (q) => q.eq("user_id", args.userId))
+      .withIndex("byUserId", (q) => q.eq("user_id", userId))
       .order("desc")
       .take(limit);
   },

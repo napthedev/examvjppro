@@ -14,14 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FileText, Calendar, BookOpen } from "lucide-react";
 import { formatDistance } from "date-fns";
 
-interface UserExamsProps {
-  userId: string;
-}
-
-export function UserExams({ userId }: UserExamsProps) {
-  const exams = useQuery(api.exams.getExamsByUser, {
-    userId: userId,
-  });
+export function UserExams() {
+  const exams = useQuery(api.exams.getExamsByUser);
 
   if (exams === undefined) {
     return (

@@ -1,29 +1,22 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 export function useCurrentUser() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const user = useQuery(api.users.current);
 
   return {
-    isLoading: !isLoaded,
-    isAuthenticated: isSignedIn,
+    isLoading: user === undefined,
+    isAuthenticated: user !== null,
     user: user
       ? {
-          id: user.id,
-          name:
-            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-            user.username ||
-            "Anonymous",
-          email: user.primaryEmailAddress?.emailAddress,
-          imageUrl: user.imageUrl,
-          externalId: user.id,
-          createdAt: user.createdAt
-            ? new Date(user.createdAt).getTime()
-            : Date.now(),
-          updatedAt: user.updatedAt
-            ? new Date(user.updatedAt).getTime()
-            : Date.now(),
+          id: user._id,
+          name: user.name || "Anonymous",
+          email: user.email,
+          imageUrl: user.image,
+          _id: user._id,
+          _creationTime: user._creationTime,
         }
       : null,
   };
