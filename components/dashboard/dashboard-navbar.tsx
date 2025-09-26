@@ -3,17 +3,17 @@
 import { FileText, LogOut, User } from "lucide-react";
 import { Authenticated } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useCurrentUser } from "../hooks/use-current-user";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import Link from "next/link";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function DashboardNavbar() {
   const { signOut } = useAuthActions();

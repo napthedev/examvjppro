@@ -1,10 +1,10 @@
 "use client";
 
 import TriggerSignIn from "@/components/trigger-sign-in";
-import { DashboardNavbar } from "@/components/dashboard-navbar";
-import { PdfDropZone } from "@/components/pdf-drop-zone";
-import { QuestionsDisplay } from "@/components/questions-display";
-import { UserExams } from "@/components/user-exams";
+import { DashboardNavbar } from "@/components/dashboard/dashboard-navbar";
+import { PdfDropZone } from "@/components/dashboard/pdf-drop-zone";
+import { QuestionsDisplay } from "@/components/exam/questions-display";
+import { UserExams } from "@/components/dashboard/user-exams";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";

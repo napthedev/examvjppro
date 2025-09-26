@@ -3,8 +3,8 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ExamDisplay } from "@/components/exam-display";
-import { DashboardNavbar } from "@/components/dashboard-navbar";
+import { ExamDisplay } from "@/components/exam/exam-display";
+import { DashboardNavbar } from "@/components/dashboard/dashboard-navbar";
 import TriggerSignIn from "@/components/trigger-sign-in";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Loader2, AlertTriangle } from "lucide-react";

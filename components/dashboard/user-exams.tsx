@@ -18,8 +18,7 @@ import Link from "next/link";
 export function UserExams() {
   const exams = useQuery(api.exams.getExamsByUser);
 
-  // if (exams === undefined) {
-  if (true) {
+  if (exams === undefined) {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-bold mb-4">Your Exams</h2>
