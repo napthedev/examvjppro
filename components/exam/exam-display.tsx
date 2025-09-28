@@ -7,6 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   FileText,
   Calendar,
   BookOpen,
@@ -19,6 +30,7 @@ import {
   Edit2,
   Save,
   X,
+  Trash2,
 } from "lucide-react";
 import { formatDistance } from "date-fns";
 import Link from "next/link";
@@ -26,12 +38,14 @@ import { Doc } from "@/convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface ExamDisplayProps {
   exam: Doc<"exams">;
 }
 
 export function ExamDisplay({ exam }: ExamDisplayProps) {
+  const router = useRouter();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(exam.exam_name);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -39,6 +53,7 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
     exam.exam_description || ""
   );
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const createdAt = new Date(exam.creation_date);
   const timeAgo = formatDistance(createdAt, new Date(), { addSuffix: true });
@@ -47,6 +62,7 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
   const attempts = useQuery(api.exams.getAttemptsByExam, { examId: exam._id });
   const updateExamName = useMutation(api.exams.updateExamName);
   const updateExamDescription = useMutation(api.exams.updateExamDescription);
+  const deleteExam = useMutation(api.exams.deleteExam);
 
   const handleStartEdit = () => {
     setIsEditingName(true);
@@ -138,6 +154,28 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
       handleSaveEditDescription();
     } else if (e.key === "Escape") {
       handleCancelEditDescription();
+    }
+  };
+
+  const handleDeleteExam = async () => {
+    setIsDeleting(true);
+    try {
+      // Navigate away first to prevent "exam not found" errors
+      router.push("/dashboard");
+
+      // Show a success message immediately for better UX
+      toast.success("Exam deleted successfully");
+
+      // Delete the exam after navigation
+      await deleteExam({ examId: exam._id });
+    } catch (error) {
+      // If deletion fails, we're already on the dashboard page
+      // So just show an error message
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete exam"
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -304,6 +342,51 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
             </div>
             <div className="flex flex-col items-end space-y-2">
               <Badge variant="secondary">{questionCount} Questions</Badge>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-400 hover:text-red-500 hover:bg-destructive/10"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Exam
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Exam</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{exam.exam_name}"? This
+                      action cannot be undone. All{" "}
+                      {attempts ? attempts.length : 0} attempt
+                      {attempts?.length !== 1 ? "s" : ""} will also be
+                      permanently deleted.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteExam}
+                      disabled={isDeleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <div className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Exam
+                        </>
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </CardHeader>

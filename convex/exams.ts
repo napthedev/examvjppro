@@ -42,20 +42,26 @@ export const getExamById = query({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
-      throw new Error("Not authenticated");
+      return null; // Return null instead of throwing for unauthenticated users
     }
 
-    const exam = await ctx.db.get(args.examId);
-    if (!exam) {
-      throw new Error("Exam not found");
-    }
+    try {
+      const exam = await ctx.db.get(args.examId);
+      if (!exam) {
+        return null; // Return null for non-existent exams
+      }
 
-    // Check if the exam belongs to the authenticated user
-    if (exam.user_id !== userId) {
-      throw new Error("Not authorized to access this exam");
-    }
+      // Check if the exam belongs to the authenticated user
+      if (exam.user_id !== userId) {
+        return null; // Return null for unauthorized access
+      }
 
-    return exam;
+      return exam;
+    } catch (error) {
+      // Handle invalid ID format gracefully
+      console.error("Error fetching exam:", error);
+      return null;
+    }
   },
 });
 
@@ -225,6 +231,39 @@ export const updateExamDescription = mutation({
     await ctx.db.patch(args.examId, {
       exam_description: args.examDescription?.trim() || undefined,
     });
+
+    return { success: true };
+  },
+});
+
+export const deleteExam = mutation({
+  args: {
+    examId: v.id("exams"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    // Verify the exam belongs to the user
+    const exam = await ctx.db.get(args.examId);
+    if (!exam || exam.user_id !== userId) {
+      throw new Error("Not authorized to delete this exam");
+    }
+
+    // Delete all attempts associated with this exam
+    const attempts = await ctx.db
+      .query("attempts")
+      .withIndex("byExamId", (q) => q.eq("exam_id", args.examId))
+      .collect();
+
+    for (const attempt of attempts) {
+      await ctx.db.delete(attempt._id);
+    }
+
+    // Delete the exam
+    await ctx.db.delete(args.examId);
 
     return { success: true };
   },

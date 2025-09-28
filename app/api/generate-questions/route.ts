@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
       // Convert to JSON-compatible format
       questions = Array.isArray(yamlData) ? yamlData : [];
 
-      console.log("Parsed YAML data:", JSON.stringify(questions, null, 2));
+      // console.log("Parsed YAML data:", JSON.stringify(questions, null, 2));
     } catch (parseError) {
       console.error("Failed to parse YAML response:", text);
       console.error("Parse error:", parseError);
