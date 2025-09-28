@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import ConvexClientProvider from "../components/convex-client-provider";
+import { ThemeProvider } from "../components/theme-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -21,13 +22,39 @@ export default function RootLayout({
 }>) {
   return (
     <ConvexClientProvider>
-      <html lang="en" className="dark">
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                try {
+                  const theme = localStorage.getItem('theme');
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  const actualTheme = theme === 'system' || !theme ? systemTheme : theme;
+                  
+                  if (actualTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (_) {
+                  // Fallback to system preference
+                  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                  }
+                }
+              `,
+            }}
+          />
+        </head>
         <body
           className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}
         >
-          <Suspense fallback={null}>{children}</Suspense>
-          <Toaster />
-          <Analytics />
+          <ThemeProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+            <Toaster richColors />
+            <Analytics />
+          </ThemeProvider>
         </body>
       </html>
     </ConvexClientProvider>

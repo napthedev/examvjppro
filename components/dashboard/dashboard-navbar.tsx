@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function DashboardNavbar() {
   const { signOut } = useAuthActions();
@@ -33,7 +34,8 @@ export function DashboardNavbar() {
             </span>
           </Link>
 
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
             <Authenticated>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

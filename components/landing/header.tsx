@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
 import LinkButton from "../link-button";
 
@@ -54,6 +55,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center space-x-2 md:space-x-4">
+            <ThemeToggle />
             <>
               <Authenticated>
                 <DropdownMenu>
