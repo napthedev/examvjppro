@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   title: "ExamVjpPro - AI-Powered Question Generator",
   description:
     "Transform your PDF lecture files into multiple-choice questions with AI. Perfect for students and educators.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

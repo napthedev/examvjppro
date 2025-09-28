@@ -1,6 +1,6 @@
-# Vercel Deployment Guide for ExamVJPPro
+# Vercel Deployment Guide for ExamVjpPro
 
-Quick guide to deploy your ExamVJPPro application to Vercel with proper OAuth configuration.
+Quick guide to deploy your ExamVjpPro application to Vercel with proper OAuth configuration.
 
 ## Prerequisites
 
