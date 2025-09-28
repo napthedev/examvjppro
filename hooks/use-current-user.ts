@@ -2,13 +2,15 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { useQueryWithError } from "./use-query-with-error";
 
 export function useCurrentUser() {
-  const user = useQuery(api.users.current);
+  const { data: user, error } = useQueryWithError(api.users.current);
 
   return {
-    isLoading: user === undefined,
-    isAuthenticated: user !== null,
+    isLoading: user === undefined && !error,
+    isAuthenticated: user !== null && !error,
+    error,
     user: user
       ? {
           id: user._id,

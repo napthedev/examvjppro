@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { useQueryWithError } from "@/hooks/use-query-with-error";
 import { api } from "@/convex/_generated/api";
 import {
   Card,
@@ -16,7 +17,25 @@ import { formatDistance } from "date-fns";
 import Link from "next/link";
 
 export function UserExams() {
-  const exams = useQuery(api.exams.getExamsByUser);
+  const { data: exams, error } = useQueryWithError(api.exams.getExamsByUser);
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+          <FileText className="h-12 w-12 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Unable to load exams</h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (exams === undefined) {
     return (
@@ -40,7 +59,7 @@ export function UserExams() {
     );
   }
 
-  if (exams.length === 0) {
+  if (!exams || exams.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
@@ -63,12 +82,12 @@ export function UserExams() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Your Exams</h2>
         <Badge variant="secondary" className="text-sm">
-          {exams.length} exam{exams.length !== 1 ? "s" : ""}
+          {exams?.length || 0} exam{(exams?.length || 0) !== 1 ? "s" : ""}
         </Badge>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {exams.map((exam) => {
+        {exams?.map((exam) => {
           const createdAt = new Date(exam.creation_date);
           const timeAgo = formatDistance(createdAt, new Date(), {
             addSuffix: true,

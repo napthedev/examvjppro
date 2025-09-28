@@ -36,6 +36,7 @@ import { formatDistance } from "date-fns";
 import Link from "next/link";
 import { Doc } from "@/convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
+import { useQueryWithError } from "@/hooks/use-query-with-error";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -59,7 +60,12 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
   const timeAgo = formatDistance(createdAt, new Date(), { addSuffix: true });
   const questionCount = exam.question_data.length;
 
-  const attempts = useQuery(api.exams.getAttemptsByExam, { examId: exam._id });
+  // Query attempts with error handling
+  const { data: attempts, error: attemptsError } = useQueryWithError(
+    api.exams.getAttemptsByExam,
+    { examId: exam._id }
+  );
+
   const updateExamName = useMutation(api.exams.updateExamName);
   const updateExamDescription = useMutation(api.exams.updateExamDescription);
   const deleteExam = useMutation(api.exams.deleteExam);
@@ -504,7 +510,10 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Your Attempts {attempts !== undefined && `(${attempts.length})`}
+            Your Attempts{" "}
+            {attempts !== undefined &&
+              attempts !== null &&
+              `(${attempts.length})`}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -512,9 +521,13 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
             <div className="text-center py-8 text-muted-foreground">
               <div className="animate-pulse">Loading attempts...</div>
             </div>
-          ) : attempts.length > 0 ? (
+          ) : attemptsError ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Failed to load attempts: {attemptsError}</p>
+            </div>
+          ) : attempts && attempts.length > 0 ? (
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {attempts.map((attempt, index) => {
+              {attempts?.map((attempt, index) => {
                 const percentage = Math.round(
                   (attempt.score / questionCount) * 100
                 );
