@@ -88,7 +88,7 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
 
   return (
     <MathJaxContext config={mathJaxConfig}>
-      <div className="space-y-6">
+      <div className="space-y-6 min-h-screen bg-background text-foreground">
         {/* Back Button */}
         <Button variant="outline" asChild className="mb-4">
           <Link href={`/exam/${exam._id}`}>
@@ -187,7 +187,7 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
                 <Badge variant={getScoreBadgeVariant()}>{percentage}%</Badge>
               </div>
 
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div
                   className={`h-2.5 rounded-full ${
                     percentage >= 80
@@ -236,7 +236,7 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
 
                 return (
                   <AccordionItem key={index} value={`question-${index}`}>
-                    <AccordionTrigger className="text-left">
+                    <AccordionTrigger className="text-left cursor-pointer">
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex items-center gap-2">
                           {isCorrect ? (
@@ -284,10 +284,10 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
                                   key={answerIndex}
                                   className={`p-3 rounded-lg border-2 ${
                                     isCorrectOption
-                                      ? "border-green-200 bg-green-50"
+                                      ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
                                       : isUserSelected && !isCorrectOption
-                                      ? "border-red-200 bg-red-50"
-                                      : "border-gray-200 bg-gray-50"
+                                      ? "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
+                                      : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
@@ -297,12 +297,12 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
                                           ? "bg-green-600 text-white"
                                           : isUserSelected && !isCorrectOption
                                           ? "bg-red-600 text-white"
-                                          : "bg-gray-300 text-gray-700"
+                                          : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-300"
                                       }`}
                                     >
                                       {answerLetter}
                                     </div>
-                                    <span className="text-sm text-black">
+                                    <span className="text-sm text-black dark:text-white">
                                       <LaTeXRenderer>{answer}</LaTeXRenderer>
                                     </span>
                                     <div className="ml-auto flex gap-2">
@@ -338,8 +338,8 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
                         <div
                           className={`p-3 rounded-lg ${
                             isCorrect
-                              ? "bg-green-50 border border-green-200"
-                              : "bg-red-50 border border-red-200"
+                              ? "bg-green-50 border border-green-200 dark:bg-green-950 dark:border-green-800"
+                              : "bg-red-50 border border-red-200 dark:bg-red-950 dark:border-red-800"
                           }`}
                         >
                           <div className="flex items-center gap-2">
@@ -350,7 +350,9 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
                             )}
                             <span
                               className={`text-sm font-medium ${
-                                isCorrect ? "text-green-800" : "text-red-800"
+                                isCorrect
+                                  ? "text-green-800 dark:text-green-200"
+                                  : "text-red-800 dark:text-red-200"
                               }`}
                             >
                               {isCorrect
@@ -363,8 +365,8 @@ export function AttemptReview({ exam, attempt }: AttemptReviewProps) {
                         {/* Explanation */}
                         <div>
                           <h4 className="font-medium mb-2">Explanation:</h4>
-                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="text-sm leading-relaxed text-blue-900">
+                          <div className="p-3 bg-blue-50 border border-blue-200 dark:bg-blue-950 dark:border-blue-800 rounded-lg">
+                            <div className="text-sm leading-relaxed text-blue-900 dark:text-blue-100">
                               <LaTeXRenderer>
                                 {question.explanation}
                               </LaTeXRenderer>
