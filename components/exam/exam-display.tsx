@@ -35,7 +35,7 @@ import {
 import { formatDistance } from "date-fns";
 import Link from "next/link";
 import { Doc } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useQueryWithError } from "@/hooks/use-query-with-error";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
@@ -218,7 +218,7 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
       {/* Exam Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col md:flex-row items-stretch md:items-start justify-between space-x-4">
             <div className="flex items-start space-x-3">
               <FileText className="h-6 w-6 text-primary mt-1" />
               <div className="flex-1">
@@ -256,7 +256,7 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
                     </div>
                   ) : (
                     <>
-                      <CardTitle className="text-2xl">
+                      <CardTitle className="text-2xl break-all">
                         {exam.exam_name}
                       </CardTitle>
                       <Button
@@ -346,8 +346,10 @@ export function ExamDisplay({ exam }: ExamDisplayProps) {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-end space-y-2">
-              <Badge variant="secondary">{questionCount} Questions</Badge>
+            <div className="flex flex-row items-center justify-center md:flex-col md:items-end mt-6 md:mt-0">
+              <Badge className="mb-0 md:mb-2 mr-2 md:mr-0" variant="secondary">
+                {questionCount} Questions
+              </Badge>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

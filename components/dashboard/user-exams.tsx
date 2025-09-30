@@ -97,7 +97,7 @@ export function UserExams() {
               <Card className="hover:shadow-md transition-all duration-200 cursor-pointer hover:border-primary/50 group">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors break-all">
                       {exam.exam_name}
                     </CardTitle>
                   </div>
