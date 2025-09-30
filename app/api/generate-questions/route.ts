@@ -1,5 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { api } from "@/convex/_generated/api";
+import { fetchMutation } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 
 // Type definitions for the question structure
 export interface QuestionOption {
@@ -312,13 +315,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      questions: questions,
-      fileName: file.name,
-      fileSize: file.size,
-      questionCount: questions.length,
-    });
+    // Transform questions to Convex schema format
+    const convexQuestions = questions.map((q) => ({
+      question: q.question,
+      answers: [q.options.A, q.options.B, q.options.C, q.options.D],
+      correct_answer: q.correctAnswer,
+      explanation: q.explanation,
+    }));
+
+    // Derive exam name and description
+    const examName = file.name.replace(/\.pdf$/i, "");
+    const examDescription = `Generated from ${file.name} containing ${questions.length} questions`;
+
+    // Get auth token from Next.js request cookies/session
+    const token = await convexAuthNextjsToken();
+
+    try {
+      // Persist exam directly from the server using the user's auth token
+      const examId = await fetchMutation(
+        api.exams.createExam,
+        {
+          examName,
+          examDescription,
+          questions: convexQuestions,
+        },
+        { token }
+      );
+
+      return NextResponse.json({
+        success: true,
+        examId,
+        fileName: file.name,
+        fileSize: file.size,
+        questionCount: questions.length,
+      });
+    } catch (err) {
+      console.error("Error saving exam to Convex:", err);
+
+      // Handle unauthenticated or authorization issues
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("Not authenticated") || message.includes("401")) {
+        return NextResponse.json(
+          { error: "You must be signed in to save exams." },
+          { status: 401 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to save the generated exam. Please try again." },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error generating questions:", error);
 

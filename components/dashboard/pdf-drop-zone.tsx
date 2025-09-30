@@ -9,33 +9,26 @@ import { cn } from "@/lib/utils";
 import { PdfSettingsForm, type PdfSettings } from "./pdf-settings-form";
 import { toast } from "sonner";
 
+// Local type for questions retained only for error descriptions if needed
+// but not used in props anymore since saving is server-side
 interface Question {
   id: number;
   question: string;
-  options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-  };
+  options: { A: string; B: string; C: string; D: string };
   correctAnswer: string;
   explanation: string;
 }
 
 interface PdfDropZoneProps {
   onFileSelect: (file: File) => void;
-  onQuestionsGenerated: (
-    questions: Question[],
-    fileName: string,
-    fileSize: number
-  ) => void;
+  onExamCreated?: (examId: string) => void;
   className?: string;
   maxSizeMB?: number;
 }
 
 export function PdfDropZone({
   onFileSelect,
-  onQuestionsGenerated,
+  onExamCreated,
   className,
   maxSizeMB = 10,
 }: PdfDropZoneProps) {
@@ -135,12 +128,10 @@ export function PdfDropZone({
 
       const data = await response.json();
 
-      if (data.success && data.questions) {
-        toast.success(
-          `Successfully generated ${data.questions.length} questions!`
-        );
-        onQuestionsGenerated(data.questions, data.fileName, data.fileSize);
-        // Reset the component after successful generation
+      if (data.success && data.examId) {
+        toast.success(`Exam created! Redirecting...`);
+        onExamCreated?.(data.examId);
+        // Reset after success
         removeFile();
       } else {
         throw new Error("Invalid response from server");

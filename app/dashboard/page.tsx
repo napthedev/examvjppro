@@ -5,78 +5,16 @@ import { DashboardNavbar } from "@/components/dashboard/dashboard-navbar";
 import { PdfDropZone } from "@/components/dashboard/pdf-drop-zone";
 import { UserExams } from "@/components/dashboard/user-exams";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-interface Question {
-  id: number;
-  question: string;
-  options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-  };
-  correctAnswer: string;
-  explanation: string;
-}
-
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useCurrentUser();
-  const createExam = useMutation(api.exams.createExam);
   const router = useRouter();
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleFileSelect = (file: File) => {
     console.log("Selected file:", file.name);
-  };
-
-  const handleQuestionsGenerated = async (
-    generatedQuestions: Question[],
-    file: string,
-    size: number
-  ) => {
-    // Save exam to Convex
-    try {
-      setIsSaving(true);
-
-      // Convert questions to the format expected by Convex schema
-      const convexQuestions = generatedQuestions.map((q) => ({
-        question: q.question,
-        answers: [q.options.A, q.options.B, q.options.C, q.options.D],
-        correct_answer: q.correctAnswer,
-        explanation: q.explanation,
-      }));
-
-      // Extract exam name from file name (remove .pdf extension)
-      const examName = file.replace(/\.pdf$/i, "");
-
-      const examId = await createExam({
-        examName,
-        examDescription: `Generated from ${file} containing ${generatedQuestions.length} questions`,
-        questions: convexQuestions,
-      });
-
-      toast.success(
-        `Exam "${examName}" saved successfully! Redirecting to exam...`
-      );
-
-      // Redirect to the exam page after successful save
-      setTimeout(() => {
-        router.push(`/exam/${examId}`);
-      }, 1000);
-    } catch (error) {
-      console.error("Error saving exam:", error);
-      toast.error(
-        "Failed to save exam. The exam was generated but couldn't be saved. Please try again."
-      );
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   // Show loading spinner while checking auth state or storing user in Convex
@@ -118,7 +56,10 @@ export default function Dashboard() {
           <div className="mb-8">
             <PdfDropZone
               onFileSelect={handleFileSelect}
-              onQuestionsGenerated={handleQuestionsGenerated}
+              onExamCreated={(examId) => {
+                toast.success("Exam saved successfully! Redirecting...");
+                router.push(`/exam/${examId}`);
+              }}
             />
           </div>
 
