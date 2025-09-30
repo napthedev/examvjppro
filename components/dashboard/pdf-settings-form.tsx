@@ -189,6 +189,24 @@ export function PdfSettingsForm({
           </div>
         </div>
 
+        {/* Warning for time-consuming options */}
+        {(settings.difficulty === "hard" ||
+          settings.explanation === "detailed") && (
+          <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+            <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            <AlertDescription className="text-sm text-orange-800 dark:text-orange-200">
+              <strong>Time Warning:</strong> Selecting{" "}
+              {settings.difficulty === "hard" &&
+              settings.explanation === "detailed"
+                ? "Hard difficulty and Detailed explanations"
+                : settings.difficulty === "hard"
+                ? "Hard difficulty"
+                : "Detailed explanations"}{" "}
+              will significantly increase generation time (up to 3-5 minutes).
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Separator />
 
         {/* Error Display */}
@@ -201,16 +219,26 @@ export function PdfSettingsForm({
 
         {/* Generate Button or Progress */}
         {isGenerating ? (
-          <div className="space-y-3 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-sm text-primary font-medium">
-                {generationProgress}
+          <div className="space-y-3">
+            <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Important:</strong> Please do not close this tab or
+                navigate away while questions are being generated. This process
+                cannot be resumed if interrupted.
+              </AlertDescription>
+            </Alert>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="text-sm text-primary font-medium">
+                  {generationProgress}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                This may take 30-120 seconds...
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This may take 30-60 seconds...
-            </p>
           </div>
         ) : (
           <div className="space-y-3">
