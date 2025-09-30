@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PdfSettingsForm, type PdfSettings } from "./pdf-settings-form";
 import { toast } from "sonner";
+import { useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 // Local type for questions retained only for error descriptions if needed
 // but not used in props anymore since saving is server-side
@@ -37,6 +39,10 @@ export function PdfDropZone({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+
+  const generateQuestionsAction = useAction(
+    api.generateQuestions.generateQuestions
+  );
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -101,35 +107,26 @@ export function PdfDropZone({
     setGenerationProgress("Uploading PDF...");
 
     try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("settings", JSON.stringify(settings));
+      // Convert file to buffer for the action
+      const fileBuffer = await selectedFile.arrayBuffer();
 
       setGenerationProgress("Analyzing document...");
 
-      let response;
-      try {
-        response = await fetch("/api/generate-questions", {
-          method: "POST",
-          body: formData,
-        });
-      } catch (networkError) {
-        throw new Error(
-          "Network connection failed. Please check your internet connection and try again."
-        );
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate questions");
-      }
+      // Call the Convex action directly
+      const data = await generateQuestionsAction({
+        fileBuffer: fileBuffer,
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        settings: {
+          numberOfQuestions: settings.numberOfQuestions,
+          difficulty: settings.difficulty,
+          explanation: settings.explanation,
+        },
+      });
 
       setGenerationProgress("Generating questions...");
 
-      const data = await response.json();
-
       if (data.success && data.examId) {
-        toast.success(`Exam created! Redirecting...`);
         onExamCreated?.(data.examId);
         // Reset after success
         removeFile();
