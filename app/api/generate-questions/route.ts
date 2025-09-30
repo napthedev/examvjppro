@@ -1,13 +1,85 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  yamlToJson,
-  type Question,
-  type QuestionOption,
-} from "@/lib/yaml-converter";
+
+// Type definitions for the question structure
+export interface QuestionOption {
+  A: string;
+  B: string;
+  C: string;
+  D: string;
+}
+
+export interface Question {
+  id: number;
+  question: string;
+  options: QuestionOption;
+  correctAnswer: "A" | "B" | "C" | "D";
+  explanation: string;
+}
 
 // Initialize Google AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+const genAI = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_AI_API_KEY!,
+});
+
+// Define the JSON schema for structured output
+const questionsSchema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      id: {
+        type: Type.INTEGER,
+        description: "Unique identifier for the question",
+      },
+      question: {
+        type: Type.STRING,
+        description: "The question text, can include LaTeX math notation",
+      },
+      options: {
+        type: Type.OBJECT,
+        properties: {
+          A: {
+            type: Type.STRING,
+            description: "Option A text, can include LaTeX math notation",
+          },
+          B: {
+            type: Type.STRING,
+            description: "Option B text, can include LaTeX math notation",
+          },
+          C: {
+            type: Type.STRING,
+            description: "Option C text, can include LaTeX math notation",
+          },
+          D: {
+            type: Type.STRING,
+            description: "Option D text, can include LaTeX math notation",
+          },
+        },
+        required: ["A", "B", "C", "D"],
+        propertyOrdering: ["A", "B", "C", "D"],
+      },
+      correctAnswer: {
+        type: Type.STRING,
+        enum: ["A", "B", "C", "D"],
+        description: "The correct answer option",
+      },
+      explanation: {
+        type: Type.STRING,
+        description:
+          "Explanation for why the correct answer is right, can include LaTeX math notation",
+      },
+    },
+    required: ["id", "question", "options", "correctAnswer", "explanation"],
+    propertyOrdering: [
+      "id",
+      "question",
+      "options",
+      "correctAnswer",
+      "explanation",
+    ],
+  },
+};
 
 // Helper function to validate and normalize question data
 function validateAndNormalizeQuestions(data: any): Question[] {
@@ -126,9 +198,6 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Get the generative model
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
     // Build difficulty instruction
     let difficultyInstruction = "";
     switch (settings.difficulty) {
@@ -172,36 +241,14 @@ export async function POST(request: NextRequest) {
     3. Indicate the correct answer
     4. Include an explanation following the detail level specified above
     5. If the content contains mathematical formulas, equations, or symbols, format them using LaTeX notation (enclosed in $ for inline math or $$ for display math)
-    6. Make sure strings don't contain characters that break YAML parsing
-    7. Keep all text on single lines (no multi-line strings)
-
-    Format your response as valid YAML with this exact structure (return only the questions array):
+    6. Make sure all text is properly formatted for JSON
+    7. Generate exactly ${settings.numberOfQuestions} questions
+    8. Follow the ${settings.difficulty} difficulty level requirement strictly
+    9. Provide ${settings.explanation} explanations as specified
+    10. Use proper LaTeX notation for all mathematical content
+    11. Focus on creating meaningful questions that test understanding
     
-    - id: 1
-      question: |
-        Question text with LaTeX if needed: $E = mc^2$
-      options:
-        A: |
-          Option A text
-        B: |
-          Option B text
-        C: |
-          Option C text
-        D: |
-          Option D text
-      correctAnswer: "A"
-      explanation: |
-        Explanation for why A is correct
-    
-    Important: 
-    - Generate exactly ${settings.numberOfQuestions} questions
-    - Follow the ${settings.difficulty} difficulty level requirement strictly
-    - Provide ${settings.explanation} explanations as specified
-    - Use proper LaTeX notation for all mathematical content
-    - Make sure the YAML is valid and properly formatted
-    - Focus on creating meaningful questions that test understanding
-    - If the document doesn't contain enough content for ${settings.numberOfQuestions} questions, generate as many as appropriate but aim for the requested number
-    - Return ONLY the YAML array of questions, no additional text or explanations
+    The response will be automatically formatted as JSON according to the specified schema.
     `;
 
     // Prepare the file data for Google AI
@@ -212,76 +259,95 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // Generate content using the model
-    const result = await model.generateContent([prompt, filePart]);
-    const response = result.response;
-    const text = response.text();
+    // Generate content using structured output
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }, filePart],
+        },
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: questionsSchema,
+      },
+    });
 
-    // Try to parse the YAML response and convert to JSON
-    let questions;
-    try {
-      // Parse YAML to JavaScript object using utility function
-      const yamlData = yamlToJson(text);
+    const text = result.text;
 
-      // Convert to JSON-compatible format
-      questions = Array.isArray(yamlData) ? yamlData : [];
-
-      // console.log("Parsed YAML data:", JSON.stringify(questions, null, 2));
-    } catch (parseError) {
-      console.error("Failed to parse YAML response:", text);
-      console.error("Parse error:", parseError);
-
-      // Fallback: try to parse as JSON in case AI returns JSON instead
-      try {
-        const jsonCleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
-        questions = JSON.parse(jsonCleanedText);
-        console.log("Successfully parsed as fallback JSON");
-      } catch (jsonParseError) {
-        return NextResponse.json(
-          {
-            error:
-              "Failed to parse AI response as YAML or JSON. Please try again.",
-          },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Validate and normalize the response structure
-    let normalizedQuestions: Question[];
-    try {
-      normalizedQuestions = validateAndNormalizeQuestions(questions);
-    } catch (validationError) {
-      console.error("Validation error:", validationError);
-      const errorMessage =
-        validationError instanceof Error
-          ? validationError.message
-          : "Unknown validation error";
+    if (!text) {
       return NextResponse.json(
-        { error: `Invalid response format from AI: ${errorMessage}` },
+        {
+          error: "No response received from the AI model. Please try again.",
+        },
         { status: 500 }
       );
     }
 
-    if (normalizedQuestions.length === 0) {
+    // Parse the JSON response directly
+    let questions: Question[];
+    try {
+      const parsedData = JSON.parse(text);
+      questions = validateAndNormalizeQuestions(parsedData);
+    } catch (parseError) {
+      console.error("Failed to parse JSON response:", text);
+      console.error("Parse error:", parseError);
       return NextResponse.json(
-        { error: "No valid questions were generated from the document" },
+        {
+          error:
+            "The AI had trouble processing your document. This might be due to poor document quality, unclear text, or unsupported PDF format. Please try again with a clearer PDF document.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (questions.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Your document doesn't contain enough readable content to generate questions. Please try a more detailed PDF with clear text.",
+        },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      questions: normalizedQuestions,
+      questions: questions,
       fileName: file.name,
       fileSize: file.size,
-      questionCount: normalizedQuestions.length,
+      questionCount: questions.length,
     });
   } catch (error) {
     console.error("Error generating questions:", error);
-    return NextResponse.json(
-      { error: "Failed to generate questions. Please try again." },
-      { status: 500 }
-    );
+
+    // Provide more specific error messages based on the error type
+    let errorMessage =
+      "An unexpected error occurred while processing your document.";
+
+    if (error instanceof Error) {
+      if (error.message.includes("API key")) {
+        errorMessage =
+          "There's a configuration issue with our AI service. Please contact support.";
+      } else if (
+        error.message.includes("quota") ||
+        error.message.includes("limit")
+      ) {
+        errorMessage =
+          "Our AI service is currently experiencing high demand. Please try again in a few minutes.";
+      } else if (error.message.includes("timeout")) {
+        errorMessage =
+          "The request took too long to process. Please try with a smaller PDF or try again later.";
+      } else if (
+        error.message.includes("network") ||
+        error.message.includes("fetch")
+      ) {
+        errorMessage =
+          "Network connection issue. Please check your internet connection and try again.";
+      }
+    }
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

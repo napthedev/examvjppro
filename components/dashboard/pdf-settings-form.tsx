@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, Settings, ArrowLeft } from "lucide-react";
+import { Sparkles, Settings, ArrowLeft, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export interface PdfSettings {
   numberOfQuestions: number;
@@ -27,6 +28,7 @@ interface PdfSettingsFormProps {
   onBack: () => void;
   isGenerating: boolean;
   generationProgress: string;
+  error?: string;
 }
 
 export function PdfSettingsForm({
@@ -35,6 +37,7 @@ export function PdfSettingsForm({
   onBack,
   isGenerating,
   generationProgress,
+  error,
 }: PdfSettingsFormProps) {
   const [settings, setSettings] = useState<PdfSettings>({
     numberOfQuestions: 10,
@@ -188,6 +191,14 @@ export function PdfSettingsForm({
 
         <Separator />
 
+        {/* Error Display */}
+        {error && !isGenerating && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Generate Button or Progress */}
         {isGenerating ? (
           <div className="space-y-3 text-center">
@@ -202,11 +213,19 @@ export function PdfSettingsForm({
             </p>
           </div>
         ) : (
-          <Button onClick={handleGenerate} className="w-full" size="lg">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Generate {settings.numberOfQuestions} Question
-            {settings.numberOfQuestions !== 1 ? "s" : ""}
-          </Button>
+          <div className="space-y-3">
+            <Button onClick={handleGenerate} className="w-full" size="lg">
+              <Sparkles className="h-4 w-4 mr-2" />
+              {error ? "Retry - " : ""}Generate {settings.numberOfQuestions}{" "}
+              Question
+              {settings.numberOfQuestions !== 1 ? "s" : ""}
+            </Button>
+            {error && (
+              <p className="text-xs text-center text-muted-foreground">
+                Check your PDF content and settings, then try again
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

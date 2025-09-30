@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PdfSettingsForm, type PdfSettings } from "./pdf-settings-form";
+import { toast } from "sonner";
 
 interface Question {
   id: number;
@@ -120,10 +121,17 @@ export function PdfDropZone({
 
       setGenerationProgress("Analyzing document...");
 
-      const response = await fetch("/api/generate-questions", {
-        method: "POST",
-        body: formData,
-      });
+      let response;
+      try {
+        response = await fetch("/api/generate-questions", {
+          method: "POST",
+          body: formData,
+        });
+      } catch (networkError) {
+        throw new Error(
+          "Network connection failed. Please check your internet connection and try again."
+        );
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -135,6 +143,9 @@ export function PdfDropZone({
       const data = await response.json();
 
       if (data.success && data.questions) {
+        toast.success(
+          `Successfully generated ${data.questions.length} questions!`
+        );
         onQuestionsGenerated(data.questions, data.fileName, data.fileSize);
         // Reset the component after successful generation
         removeFile();
@@ -143,13 +154,52 @@ export function PdfDropZone({
       }
     } catch (err) {
       console.error("Error generating questions:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to generate questions"
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to generate questions";
+
+      // Set error for display in the component
+      setError(errorMessage);
+
+      // Show toast notification
+      toast.error("Question Generation Failed", {
+        description: getErrorDescription(errorMessage),
+        action: {
+          label: "Retry",
+          onClick: () => generateQuestions(settings),
+        },
+      });
     } finally {
       setIsGenerating(false);
       setGenerationProgress("");
     }
+  };
+
+  const getErrorDescription = (errorMessage: string): string => {
+    if (
+      errorMessage.includes("Failed to parse AI response") ||
+      errorMessage.includes("had trouble processing")
+    ) {
+      return "The AI had trouble understanding your document. Please try again or use a different PDF.";
+    }
+    if (errorMessage.includes("Google AI API key")) {
+      return "There's a configuration issue. Please contact support.";
+    }
+    if (errorMessage.includes("File size")) {
+      return "Your file is too large. Please use a PDF smaller than 10MB.";
+    }
+    if (errorMessage.includes("File must be a PDF")) {
+      return "Please make sure you're uploading a valid PDF file.";
+    }
+    if (
+      errorMessage.includes("No valid questions") ||
+      errorMessage.includes("doesn't contain enough")
+    ) {
+      return "The document doesn't contain enough content to generate questions. Try a more detailed PDF.";
+    }
+    if (errorMessage.includes("Network connection")) {
+      return "Please check your internet connection and try again.";
+    }
+    return "Something went wrong. Please check your internet connection and try again.";
   };
 
   const handleClick = () => {
@@ -167,6 +217,7 @@ export function PdfDropZone({
         onBack={handleBackToUpload}
         isGenerating={isGenerating}
         generationProgress={generationProgress}
+        error={error}
       />
     );
   }
