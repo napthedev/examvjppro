@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, LogOut, User } from "lucide-react";
+import { FileText, LogOut } from "lucide-react";
 import { Authenticated } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useCurrentUser } from "@/hooks/use-current-user";

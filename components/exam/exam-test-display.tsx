@@ -85,7 +85,7 @@ export function ExamTestDisplay({ exam }: ExamTestDisplayProps) {
 
     try {
       // Calculate score and prepare answers array
-      const { correct, total } = getScore();
+      const { correct } = getScore();
       const timeTakenSeconds = Math.floor(
         (submitTime.getTime() - startTime.getTime()) / 1000
       );

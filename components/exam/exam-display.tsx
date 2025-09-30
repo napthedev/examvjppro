@@ -35,7 +35,7 @@ import {
 import { formatDistance } from "date-fns";
 import Link from "next/link";
 import { Doc } from "@/convex/_generated/dataModel";
-import { useQuery, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { useQueryWithError } from "@/hooks/use-query-with-error";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";

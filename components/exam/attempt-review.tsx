@@ -13,7 +13,6 @@ import {
 import {
   ChevronLeft,
   Clock,
-  Target,
   CheckCircle2,
   XCircle,
   TrendingUp,

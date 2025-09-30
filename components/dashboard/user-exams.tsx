@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "convex/react";
 import { useQueryWithError } from "@/hooks/use-query-with-error";
 import { api } from "@/convex/_generated/api";
 import {
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Calendar, BookOpen, ExternalLink } from "lucide-react";
+import { FileText, Calendar, BookOpen } from "lucide-react";
 import { formatDistance } from "date-fns";
 import Link from "next/link";
 

@@ -2,14 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import {
-  Upload,
-  FileText,
-  X,
-  AlertCircle,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
+import { AlertCircle, FileText, Upload, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
